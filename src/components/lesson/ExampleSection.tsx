@@ -7,11 +7,28 @@ interface ExampleSectionProps {
 }
 
 export const ExampleSection: React.FC<ExampleSectionProps> = ({ examples }) => {
+
+    // --- 修改開始：針對 iOS 優化的發音函式 ---
     const playAudio = (text: string) => {
+        // 1. 強制停止之前的發音
+        window.speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ko-KR';
+        utterance.rate = 0.8; // 稍微放慢語速
+
+        // 2. 抓取並指定韓文 Voice Object
+        const voices = window.speechSynthesis.getVoices();
+        const koreanVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+
+        // 3. 若有找到，強制指定
+        if (koreanVoice) {
+            utterance.voice = koreanVoice;
+        }
+
         window.speechSynthesis.speak(utterance);
     };
+    // --- 修改結束 ---
 
     return (
         <div className="mb-8">

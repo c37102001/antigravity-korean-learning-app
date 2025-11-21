@@ -21,11 +21,27 @@ export const ListeningGame: React.FC = () => {
         setOptions(newOptions);
     };
 
+    // --- 修改開始：針對 iOS 優化的發音函式 ---
     const playAudio = () => {
+        // 1. 強制停止之前的發音，避免 iOS 卡住
+        window.speechSynthesis.cancel();
+
         const utterance = new SpeechSynthesisUtterance(currentWord.korean);
         utterance.lang = 'ko-KR';
+        utterance.rate = 0.8; // 稍微放慢語速，適合學習
+
+        // 2. 關鍵修正：明確抓取韓文語音物件 (Voice Object)
+        const voices = window.speechSynthesis.getVoices();
+        const koreanVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+
+        // 3. 如果找到韓文語音，強制指定給 utterance (解決 iOS 只有 lang 無效的問題)
+        if (koreanVoice) {
+            utterance.voice = koreanVoice;
+        }
+
         window.speechSynthesis.speak(utterance);
     };
+    // --- 修改結束 ---
 
     const checkAnswer = (answer: string) => {
         if (status !== 'idle') return;
