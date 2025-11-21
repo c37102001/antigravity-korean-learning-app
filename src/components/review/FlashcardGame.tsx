@@ -9,11 +9,38 @@ export const FlashcardGame: React.FC = () => {
 
     const currentCard = vocabulary[currentIndex];
 
+    // --- 修改開始：優先指定 Yuna 的發音函式 ---
     const playAudio = (text: string, lang: 'ko-KR' | 'zh-TW') => {
+        window.speechSynthesis.cancel(); // 停止之前的發音
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang;
+
+        if (lang === 'ko-KR') {
+            utterance.rate = 0.8; // 韓文語速微調
+
+            let voices = window.speechSynthesis.getVoices();
+
+            // 處理 iOS 語音延遲載入
+            if (voices.length === 0) {
+                window.speechSynthesis.onvoiceschanged = () => {
+                    voices = window.speechSynthesis.getVoices();
+                };
+            }
+
+            // 優先尋找 "Yuna"，找不到才找其他韓文語音
+            const targetVoice = voices.find(v => v.name.includes('Yuna'))
+                || voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+        }
+        // 中文語音 (zh-TW) 保持預設，讓系統自行選擇
+
         window.speechSynthesis.speak(utterance);
     };
+    // --- 修改結束 ---
 
     const handleFlip = () => {
         setIsFlipped(!isFlipped);

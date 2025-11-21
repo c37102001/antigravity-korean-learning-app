@@ -21,22 +21,29 @@ export const ListeningGame: React.FC = () => {
         setOptions(newOptions);
     };
 
-    // --- 修改開始：針對 iOS 優化的發音函式 ---
+    // --- 修改開始：優先指定 Yuna 的發音函式 ---
     const playAudio = () => {
-        // 1. 強制停止之前的發音，避免 iOS 卡住
-        window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel(); // 停止之前的發音
 
         const utterance = new SpeechSynthesisUtterance(currentWord.korean);
         utterance.lang = 'ko-KR';
-        utterance.rate = 0.8; // 稍微放慢語速，適合學習
+        utterance.rate = 0.8; // 韓文語速微調
 
-        // 2. 關鍵修正：明確抓取韓文語音物件 (Voice Object)
-        const voices = window.speechSynthesis.getVoices();
-        const koreanVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+        let voices = window.speechSynthesis.getVoices();
 
-        // 3. 如果找到韓文語音，強制指定給 utterance (解決 iOS 只有 lang 無效的問題)
-        if (koreanVoice) {
-            utterance.voice = koreanVoice;
+        // 處理 iOS 語音延遲載入
+        if (voices.length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+            };
+        }
+
+        // 優先尋找 "Yuna"，找不到才找其他韓文語音
+        const targetVoice = voices.find(v => v.name.includes('Yuna'))
+            || voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+
+        if (targetVoice) {
+            utterance.voice = targetVoice;
         }
 
         window.speechSynthesis.speak(utterance);

@@ -8,22 +8,28 @@ interface ExampleSectionProps {
 
 export const ExampleSection: React.FC<ExampleSectionProps> = ({ examples }) => {
 
-    // --- 修改開始：針對 iOS 優化的發音函式 ---
+    // --- 修改開始：優先指定 Yuna 的發音函式 ---
     const playAudio = (text: string) => {
-        // 1. 強制停止之前的發音
         window.speechSynthesis.cancel();
 
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'ko-KR';
-        utterance.rate = 0.8; // 稍微放慢語速
+        utterance.rate = 0.8;
 
-        // 2. 抓取並指定韓文 Voice Object
-        const voices = window.speechSynthesis.getVoices();
-        const koreanVoice = voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+        let voices = window.speechSynthesis.getVoices();
 
-        // 3. 若有找到，強制指定
-        if (koreanVoice) {
-            utterance.voice = koreanVoice;
+        if (voices.length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+            };
+        }
+
+        // 優先找 Yuna
+        const targetVoice = voices.find(v => v.name.includes('Yuna'))
+            || voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+
+        if (targetVoice) {
+            utterance.voice = targetVoice;
         }
 
         window.speechSynthesis.speak(utterance);
