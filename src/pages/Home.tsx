@@ -15,41 +15,32 @@ export const Home: React.FC = () => {
         </p>
       </div>
 
-      <div className="space-y-12">
-        {curriculum.weeks.map((week) => (
-          <div key={week.id} className="relative">
-            <div className="mb-6 flex items-end justify-between border-b border-slate-200 pb-4">
+      <div className="grid gap-6 sm:grid-cols-1">
+        {curriculum.folders.map((folder) => (
+          <Link
+            key={folder.id}
+            to={`/folder/${folder.id}`}
+            className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 transition-all hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1"
+          >
+            <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">{week.title}</h2>
-                <p className="mt-1 text-slate-600">{week.description}</p>
+                <h2 className="text-2xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                  {folder.title}
+                </h2>
+                <p className="mt-2 text-lg text-slate-600">
+                  {folder.description}
+                </p>
+                <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 font-medium text-slate-800">
+                    {folder.lessons.length} 堂課
+                  </span>
+                </div>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <ChevronRight className="h-6 w-6" />
               </div>
             </div>
-
-            <div className="grid gap-4 sm:grid-cols-1">
-              {week.days.map((day) => (
-                <Link
-                  key={day.id}
-                  to={`/week/${week.id}/day/${day.id}`}
-                  className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-md hover:translate-x-1"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                      {day.id.split('-')[1].toUpperCase()}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">
-                        {day.title}
-                      </h3>
-                      <p className="text-sm text-slate-500 line-clamp-1">
-                        {day.description}
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-slate-300 group-hover:text-indigo-500" />
-                </Link>
-              ))}
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

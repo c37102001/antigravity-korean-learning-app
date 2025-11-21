@@ -1,120 +1,190 @@
-import React, { useState, useEffect } from 'react';
-import { vocabulary } from '../../data/vocabulary';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Volume2, ArrowRight, Keyboard, MousePointer2 } from 'lucide-react';
+import type { ReviewItem } from '../../types';
 
+interface TranslationGameProps {
+    items: ReviewItem[];
+    mode?: 'sequential' | 'random';
+    title?: string;
+}
 
-export const TranslationGame: React.FC = () => {
-    const [mode, setMode] = useState<'typing' | 'choice'>('choice');
+export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 'random', title = '翻譯練習' }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [options, setOptions] = useState<string[]>([]);
     const [input, setInput] = useState('');
-    const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
-    const [score, setScore] = useState(0);
-
-    const currentWord = vocabulary[currentIndex];
+    const [showResult, setShowResult] = useState(false);
+    const [isCorrect, setIsCorrect] = useState(false);
+    const [gameMode, setGameMode] = useState<'typing' | 'choice'>('choice');
+    const [shuffledItems, setShuffledItems] = useState<ReviewItem[]>([]);
+    const [options, setOptions] = useState<string[]>([]);
+    const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if (mode === 'choice') {
-            generateOptions();
+        if (mode === 'random') {
+            setShuffledItems([...items].sort(() => Math.random() - 0.5));
+        } else {
+            setShuffledItems(items);
         }
-    }, [currentIndex, mode]);
+        setCurrentIndex(0);
+        setShowResult(false);
+        setInput('');
+    }, [items, mode]);
 
-    const generateOptions = () => {
-        const otherWords = vocabulary.filter(v => v.id !== currentWord.id);
-        const randomDistractor = otherWords[Math.floor(Math.random() * otherWords.length)];
-        const newOptions = [currentWord.korean, randomDistractor.korean].sort(() => Math.random() - 0.5);
-        setOptions(newOptions);
+    const currentItem = shuffledItems[currentIndex];
+
+    useEffect(() => {
+        if (currentItem && gameMode === 'choice') {
+            const others = items
+                .filter(i => i.id !== currentItem.id)
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3)
+                .map(i => i.back); // Options are Answers (Korean)
+
+            setOptions([...others, currentItem.back].sort(() => Math.random() - 0.5));
+        }
+    }, [currentItem, gameMode, items]);
+
+    if (!currentItem) return <div>載入中...</div>;
+
+    const playAudio = (text: string) => {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.8;
+
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) {
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+            };
+        }
+        const targetVoice = voices.find(v => v.name.includes('Yuna'))
+            || voices.find(v => v.lang.includes('ko') || v.lang.includes('KR'));
+        if (targetVoice) utterance.voice = targetVoice;
+
+        window.speechSynthesis.speak(utterance);
     };
 
     const checkAnswer = (answer: string) => {
-        if (status !== 'idle') return;
-
-        if (answer === currentWord.korean) {
-            setStatus('correct');
-            setScore(s => s + 1);
-            setTimeout(nextQuestion, 1000);
-        } else {
-            setStatus('incorrect');
+        const correct = answer.trim().toLowerCase() === currentItem.back.toLowerCase();
+        setIsCorrect(correct);
+        setShowResult(true);
+        if (correct) {
+            playAudio(currentItem.audio);
         }
     };
 
     const nextQuestion = () => {
-        setStatus('idle');
+        setShowResult(false);
         setInput('');
-        setCurrentIndex(prev => (prev + 1) % vocabulary.length);
+        setIsCorrect(false);
+        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
     };
 
     return (
-        <div className="mx-auto max-w-lg">
-            <div className="mb-8 flex items-center justify-between">
-                <div className="flex gap-2 rounded-lg bg-slate-100 p-1">
+        <div className="mx-auto max-w-2xl">
+            <div className="mb-8 text-center">
+                <h2 className="text-2xl font-bold text-slate-900">{title} ({currentIndex + 1}/{shuffledItems.length})</h2>
+                <div className="mt-4 flex justify-center gap-4">
                     <button
-                        onClick={() => setMode('choice')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'choice' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setGameMode('choice')}
+                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${gameMode === 'choice'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
                     >
+                        <MousePointer2 className="h-4 w-4" />
                         選擇題
                     </button>
                     <button
-                        onClick={() => setMode('typing')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'typing' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                        onClick={() => setGameMode('typing')}
+                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${gameMode === 'typing'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
                     >
+                        <Keyboard className="h-4 w-4" />
                         打字練習
                     </button>
                 </div>
-                <div className="font-bold text-slate-900">得分: {score}</div>
             </div>
 
-            <div className="mb-8 text-center">
-                <div className="text-sm text-slate-500 mb-2">請翻譯成韓文</div>
-                <div className="text-4xl font-bold text-slate-900">{currentWord.chinese}</div>
-            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
+                <div className="mb-8 text-center">
+                    <p className="mb-2 text-sm text-slate-500">請翻譯成韓文</p>
+                    <h3 className="text-3xl font-bold text-slate-900">{currentItem.front}</h3>
+                </div>
 
-            {mode === 'choice' ? (
-                <div className="grid gap-4">
-                    {options.map((opt, i) => (
-                        <button
-                            key={i}
-                            onClick={() => checkAnswer(opt)}
-                            disabled={status !== 'idle'}
-                            className={`p-6 rounded-xl border-2 text-xl font-bold transition-all ${status === 'correct' && opt === currentWord.korean ? 'border-emerald-500 bg-emerald-50 text-emerald-700' :
-                                status === 'incorrect' && opt !== currentWord.korean ? 'opacity-50' :
-                                    status === 'incorrect' && opt === currentWord.korean ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : // Show correct answer if wrong
-                                        'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50'
+                <AnimatePresence mode="wait">
+                    {showResult ? (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            className={`rounded-xl p-6 text-center ${isCorrect ? 'bg-emerald-50 text-emerald-900' : 'bg-red-50 text-red-900'
                                 }`}
                         >
-                            {opt}
-                        </button>
-                    ))}
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && checkAnswer(input)}
-                        placeholder="輸入韓文..."
-                        className="w-full rounded-xl border-2 border-slate-200 px-6 py-4 text-xl outline-none focus:border-indigo-500"
-                        disabled={status !== 'idle'}
-                    />
-                    <button
-                        onClick={() => checkAnswer(input)}
-                        disabled={!input.trim() || status !== 'idle'}
-                        className="w-full rounded-xl bg-indigo-600 py-4 font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                        檢查
-                    </button>
-                </div>
-            )}
-
-            {status === 'incorrect' && (
-                <div className="mt-6 text-center animate-bounce">
-                    <div className="text-rose-600 font-bold mb-2">答錯了！正確答案是：</div>
-                    <div className="text-2xl font-bold text-slate-900">{currentWord.korean}</div>
-                    <button onClick={nextQuestion} className="mt-4 text-indigo-600 font-medium hover:underline">
-                        下一題
-                    </button>
-                </div>
-            )}
+                            <div className="mb-4 text-xl font-bold">
+                                {isCorrect ? '答對了！' : '答錯了...'}
+                            </div>
+                            <div className="mb-6 text-2xl">
+                                {currentItem.back}
+                                <button
+                                    onClick={() => playAudio(currentItem.audio)}
+                                    className="ml-2 inline-flex align-middle text-indigo-600 hover:text-indigo-800"
+                                >
+                                    <Volume2 className="h-6 w-6" />
+                                </button>
+                            </div>
+                            <button
+                                onClick={nextQuestion}
+                                className="inline-flex items-center rounded-lg bg-indigo-600 px-6 py-3 font-bold text-white hover:bg-indigo-700"
+                            >
+                                下一題 <ArrowRight className="ml-2 h-5 w-5" />
+                            </button>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                        >
+                            {gameMode === 'choice' ? (
+                                <div className="grid gap-3">
+                                    {options.map((option, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => checkAnswer(option)}
+                                            className="rounded-xl border-2 border-slate-100 p-4 text-lg font-medium text-slate-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
+                                        >
+                                            {option}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="flex gap-2">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={(e) => e.key === 'Enter' && checkAnswer(input)}
+                                        placeholder="輸入韓文..."
+                                        className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-3 text-lg outline-none focus:border-indigo-500"
+                                        autoFocus
+                                    />
+                                    <button
+                                        onClick={() => checkAnswer(input)}
+                                        className="rounded-xl bg-indigo-600 px-6 font-bold text-white hover:bg-indigo-700"
+                                    >
+                                        送出
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };

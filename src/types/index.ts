@@ -24,20 +24,27 @@ export interface LessonContent {
     exercises: Exercise[];
 }
 
-export interface Day {
+export interface Lesson {
     id: string;
     title: string;
     description: string;
     content: LessonContent;
 }
 
-export interface Week {
+export interface Folder {
     id: string;
     title: string;
     description: string;
-    days: Day[];
+    lessons: Lesson[];
 }
 
 export interface Curriculum {
-    weeks: Week[];
+    folders: Folder[];
+}
+
+export interface ReviewItem {
+    id: string;
+    front: string;
+    back: string;
+    audio: string;
 }

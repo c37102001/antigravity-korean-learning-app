@@ -1,0 +1,51 @@
+[
+    {
+        "id": "week-1",
+        "title": "Week 1：打地基（句型骨架 & 助詞）",
+        "description": "完成後：能說「我是志豪、這是咖啡、我在台灣工作」",
+        "lessons": [
+            {
+                "id": "w1-d1",
+                "title": "Day 1：예요 / 이에요 (是)",
+                "description": "名詞結尾的「是」。判斷有無收尾音（Batchim）。",
+                "file": "week1/day1.json"
+            },
+            {
+                "id": "w1-d2",
+                "title": "Day 2：이/가 vs 은/는",
+                "description": "主語助詞 vs 主題助詞，韓文最難搞懂的助詞雙胞胎。",
+                "file": "week1/day2.json"
+            },
+            {
+                "id": "w1-d3",
+                "title": "Day 3：있어요 / 없어요 (有/沒有)",
+                "description": "存在與否，也可以表示「在/不在」。",
+                "file": "week1/day3.json"
+            },
+            {
+                "id": "w1-d4",
+                "title": "Day 4：動詞現在式 (아요/어요/해요)",
+                "description": "韓文動詞變化的核心規則。",
+                "file": "week1/day4.json"
+            },
+            {
+                "id": "w1-d5",
+                "title": "Day 5：에 / 에서 (地點助詞)",
+                "description": "靜態地點 vs 動態地點。",
+                "file": "week1/day5.json"
+            },
+            {
+                "id": "w1-d6",
+                "title": "Day 6：綜合練習",
+                "description": "把這週學的全部串起來！",
+                "file": "week1/day6.json"
+            },
+            {
+                "id": "w1-d7",
+                "title": "Day 7：複習＋自我介紹",
+                "description": "成果驗收：用韓文介紹自己。",
+                "file": "week1/day7.json"
+            }
+        ]
+    }
+]

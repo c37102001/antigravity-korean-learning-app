@@ -1,0 +1,53 @@
+{
+    "grammar": [
+        {
+            "title": "있어요 (有/在)",
+            "explanation": "表示某人或某物存在。前面通常接 이/가。",
+            "examples": [
+                {
+                    "korean": "돈이 있어요.",
+                    "chinese": "有錢。"
+                },
+                {
+                    "korean": "집에 있어요.",
+                    "chinese": "在家裡。"
+                }
+            ]
+        },
+        {
+            "title": "없어요 (沒有/不在)",
+            "explanation": "表示某人或某物不存在。",
+            "examples": [
+                {
+                    "korean": "시간이 없어요.",
+                    "chinese": "沒時間。"
+                }
+            ]
+        }
+    ],
+    "examples": [
+        {
+            "korean": "남자 친구가 있어요?",
+            "chinese": "有男朋友嗎？"
+        },
+        {
+            "korean": "약속이 없어요.",
+            "chinese": "沒有約。"
+        }
+    ],
+    "supplementary": "💡 注意：있어요/없어요 前面的名詞助詞通常用 이/가，而不是 은/는（除非有對比語氣）。",
+    "exercises": [
+        {
+            "id": "ex1",
+            "question": "有傘 (우산)。",
+            "answer": "우산이 있어요",
+            "hint": "記得加助詞 이"
+        },
+        {
+            "id": "ex2",
+            "question": "沒有水 (물)。",
+            "answer": "물이 없어요",
+            "hint": "記得加助詞 이"
+        }
+    ]
+}
