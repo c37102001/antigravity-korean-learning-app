@@ -19,7 +19,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
     return (
         <div className="mx-auto max-w-2xl">
             {/* Grammar Section */}
-            {content.grammar.length > 0 && (
+            {content.grammar && content.grammar.length > 0 && (
                 <div className="mb-10">
                     <h2 className="mb-6 text-2xl font-bold text-slate-900">文法解釋</h2>
                     {content.grammar.map((g, i) => (
@@ -29,7 +29,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
             )}
 
             {/* Examples Section */}
-            {content.examples.length > 0 && (
+            {content.examples && content.examples.length > 0 && (
                 <div className="mb-10">
                     <ExampleSection examples={content.examples} />
                 </div>
