@@ -47,5 +47,152 @@
                 "file": "week1/day7.json"
             }
         ]
+    },
+    {
+        "id": "week-2",
+        "title": "Week 2：動詞熟悉週（描述事情）",
+        "description": "完成後：能說「我昨天去超市、我想吃泡麵、因為下雨所以沒出門」。",
+        "lessons": [
+            {
+                "id": "w2-d1",
+                "title": "Day 1：過去式（았어요 / 었어요 / 했어요）",
+                "description": "表達「做了、去了、吃了」等已經發生的動作。",
+                "file": "week2/day1.json"
+            },
+            {
+                "id": "w2-d2",
+                "title": "Day 2：未來式（〜ㄹ 거예요）",
+                "description": "表達「明天會～」「等一下要～」的未來計畫。",
+                "file": "week2/day2.json"
+            },
+            {
+                "id": "w2-d3",
+                "title": "Day 3：想要〜（〜고 싶어요）",
+                "description": "表示自己的想法或想做的事情：想吃、想休息、想去韓國。",
+                "file": "week2/day3.json"
+            },
+            {
+                "id": "w2-d4",
+                "title": "Day 4：動作接續（〜고）",
+                "description": "把兩個動作自然串起來：吃完去、看了再買、洗澡然後睡覺。",
+                "file": "week2/day4.json"
+            },
+            {
+                "id": "w2-d5",
+                "title": "Day 5：原因（〜아/어서）",
+                "description": "表達理由：因為下雨所以沒出去、因為忙所以沒吃飯。",
+                "file": "week2/day5.json"
+            },
+            {
+                "id": "w2-d6",
+                "title": "Day 6：形容詞現在式",
+                "description": "用形容詞描述人事物：漂亮、便宜、高、難、好吃。",
+                "file": "week2/day6.json"
+            },
+            {
+                "id": "w2-d7",
+                "title": "Day 7：綜合練習＋日記",
+                "description": "把這週的動詞變化全部串起來，寫出簡單的一天小日記。",
+                "file": "week2/day7.json"
+            }
+        ]
+    },
+    {
+        "id": "week-3",
+        "title": "Week 3：擴充語氣（請求、比較、不要）",
+        "description": "完成後：能說「可以給我～嗎？」「不要吃！」「比較便宜」。",
+        "lessons": [
+            {
+                "id": "w3-d1",
+                "title": "Day 1：請求敬語（〜(으)세요）",
+                "description": "表達禮貌請求：請給我〜、請坐、請看這裡。",
+                "file": "week3/day1.json"
+            },
+            {
+                "id": "w3-d2",
+                "title": "Day 2：禁止（〜지 마세요）",
+                "description": "表示禁止與提醒：請不要〜、不要走、不要吃。",
+                "file": "week3/day2.json"
+            },
+            {
+                "id": "w3-d3",
+                "title": "Day 3：不能／不（못 / 안）",
+                "description": "「不」與「不能」的差別：不能吃 vs 不想吃。",
+                "file": "week3/day3.json"
+            },
+            {
+                "id": "w3-d4",
+                "title": "Day 4：比較（〜보다）",
+                "description": "比較句：A 比 B 更〜。例如：這個比較便宜。",
+                "file": "week3/day4.json"
+            },
+            {
+                "id": "w3-d5",
+                "title": "Day 5：或（〜거나）",
+                "description": "選擇句：吃拉麵或飯、週末休息或運動。",
+                "file": "week3/day5.json"
+            },
+            {
+                "id": "w3-d6",
+                "title": "Day 6：도 / 하고 / (이)랑",
+                "description": "也、和、一起；口語感最強的連接助詞。",
+                "file": "week3/day6.json"
+            },
+            {
+                "id": "w3-d7",
+                "title": "Day 7：情境練習（餐廳、超市、咖啡廳）",
+                "description": "用這週文法做生活對話練習。",
+                "file": "week3/day7.json"
+            }
+        ]
+    },
+    {
+        "id": "week-4",
+        "title": "Week 4：口語提升（推測、打算、如果）",
+        "description": "完成後：能理解 vlog、簡單訪談，也能自然表達感覺、推測、計畫。",
+        "lessons": [
+            {
+                "id": "w4-d1",
+                "title": "Day 1：打算（〜(으)려고）",
+                "description": "表達計畫與目的：打算去、為了學韓文、準備吃飯。",
+                "file": "week4/day1.json"
+            },
+            {
+                "id": "w4-d2",
+                "title": "Day 2：提議／推測（〜(으)ㄹ까요）",
+                "description": "要不要一起？我猜可能會〜？用於提議與推測。",
+                "file": "week4/day2.json"
+            },
+            {
+                "id": "w4-d3",
+                "title": "Day 3：推測（〜(으)ㄴ 것 같아요）",
+                "description": "表示感覺、推測：好像很累、好像下雨了。",
+                "file": "week4/day3.json"
+            },
+            {
+                "id": "w4-d4",
+                "title": "Day 4：因為（〜(으)니까）",
+                "description": "表達理由：因為忙所以不能去。",
+                "file": "week4/day4.json"
+            },
+            {
+                "id": "w4-d5",
+                "title": "Day 5：如果（〜면）",
+                "description": "條件句：如果有時間、如果下雨、如果你來的話。",
+                "file": "week4/day5.json"
+            },
+            {
+                "id": "w4-d6",
+                "title": "Day 6：口語語氣（〜네요／〜잖아요）",
+                "description": "驚訝、感嘆、提醒、帶感情的語氣。",
+                "file": "week4/day6.json"
+            },
+            {
+                "id": "w4-d7",
+                "title": "Day 7：綜合練習 + vlog 句子解析",
+                "description": "把這週文法串成自然會話並解析簡單 vlog。",
+                "file": "week4/day7.json"
+            }
+        ]
     }
 ]

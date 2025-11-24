@@ -4,7 +4,6 @@ import type { LessonContent } from '../../types';
 import { GrammarCard } from './GrammarCard';
 import { ExampleSection } from './ExampleSection';
 import { SupplementSection } from './SupplementSection';
-import { PracticeInput } from './PracticeInput';
 import { Trophy } from 'lucide-react';
 
 interface LessonViewProps {
@@ -40,16 +39,8 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
                 </div>
             )}
 
-            {/* Practice Section */}
-            {content.exercises.length > 0 && (
-                <div className="mb-10">
-                    <h2 className="mb-6 text-2xl font-bold text-slate-900">練習題</h2>
-                    <PracticeInput exercises={content.exercises} />
-                </div>
-            )}
-
             {/* Unit Review Button */}
-            {content.exercises.length > 0 && (
+            {content.examples.length > 0 && (
                 <div className="mt-12 mb-8 text-center">
                     <div className="relative py-4">
                         <div className="absolute inset-0 flex items-center">

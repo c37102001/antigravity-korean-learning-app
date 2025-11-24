@@ -14,14 +14,12 @@ export interface Example {
 export interface GrammarPoint {
     title: string;
     explanation: string;
-    examples: Example[];
 }
 
 export interface LessonContent {
     grammar: GrammarPoint[];
-    examples: Example[]; // General examples for the day
+    examples: Example[]; // Examples used for Unit Review
     supplementary: string; // Markdown or text
-    exercises: Exercise[];
 }
 
 export interface Lesson {

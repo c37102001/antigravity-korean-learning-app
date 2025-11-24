@@ -21,31 +21,31 @@ export const LessonReviewGame: React.FC = () => {
         return <Navigate to="/" replace />;
     }
 
-    // Convert exercises to ReviewItems
-    // Exercise: { id, question, answer, hint }
+    // Convert examples to ReviewItems
+    // Example: { korean, chinese }
     // ReviewItem: { id, front, back, audio }
     // Mapping:
-    // Front = Question (Chinese/Context)
-    // Back = Answer (Korean)
-    // Audio = Answer (Korean)
+    // Front = Chinese (Meaning)
+    // Back = Korean (Word/Phrase)
+    // Audio = Korean (Word/Phrase)
 
     // If frontSide is 'answer', we swap Front and Back
-    const items: ReviewItem[] = lesson.content.exercises.map(ex => {
-        const question = ex.question;
-        const answer = ex.answer;
+    const items: ReviewItem[] = lesson.content.examples.map((ex, index) => {
+        const chinese = ex.chinese;
+        const korean = ex.korean;
 
         return {
-            id: ex.id,
-            front: frontSide === 'question' ? question : answer,
-            back: frontSide === 'question' ? answer : question,
-            audio: answer // Audio is always the Korean answer
+            id: `ex${index + 1}`,
+            front: frontSide === 'question' ? chinese : korean,
+            back: frontSide === 'question' ? korean : chinese,
+            audio: korean // Audio is always the Korean
         };
     });
 
     if (items.length === 0) {
         return (
             <div className="text-center py-20">
-                <h2 className="text-xl font-bold text-slate-900 mb-4">本單元沒有練習題</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">本單元沒有範例</h2>
                 <Link to={`/folder/${folderId}/lesson/${lessonId}`} className="text-indigo-600 hover:underline">
                     回到課程
                 </Link>

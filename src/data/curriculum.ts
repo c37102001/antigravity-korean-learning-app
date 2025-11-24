@@ -16,8 +16,7 @@ const getLessonContent = (filePath: string): LessonContent => {
         return {
             grammar: [],
             examples: [],
-            supplementary: 'Content not found',
-            exercises: []
+            supplementary: 'Content not found'
         };
     }
     return module.default;

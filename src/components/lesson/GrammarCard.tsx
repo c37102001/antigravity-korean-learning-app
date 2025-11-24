@@ -20,15 +20,6 @@ export const GrammarCard: React.FC<GrammarCardProps> = ({ grammar, index }) => {
             </div>
             <div className="p-6">
                 <p className="mb-4 whitespace-pre-line text-slate-700 leading-relaxed">{grammar.explanation}</p>
-
-                <div className="space-y-3">
-                    {grammar.examples.map((ex, i) => (
-                        <div key={i} className="rounded-lg bg-slate-50 p-3 text-sm">
-                            <div className="font-medium text-slate-900">{ex.korean}</div>
-                            <div className="text-slate-500">{ex.chinese}</div>
-                        </div>
-                    ))}
-                </div>
             </div>
         </motion.div>
     );
