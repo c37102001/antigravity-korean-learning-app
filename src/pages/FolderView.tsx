@@ -36,7 +36,9 @@ export const FolderView: React.FC = () => {
                     >
                         <div className="flex items-center gap-4">
                             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 font-bold group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                {lesson.id.split('-')[1].toUpperCase()}
+                                {lesson.id.includes('-')
+                                    ? lesson.id.split('-')[1].toUpperCase()
+                                    : (lesson.id.charAt(0) + lesson.id.replace(/\D/g, '')).toUpperCase()}
                             </div>
                             <div>
                                 <h3 className="font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">

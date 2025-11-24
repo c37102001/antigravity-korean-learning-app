@@ -194,5 +194,18 @@
                 "file": "week4/day7.json"
             }
         ]
+    },
+    {
+        "id": "videos",
+        "title": "跟讀練習影片",
+        "description": "跟讀練習影片",
+        "lessons": [
+            {
+                "id": "video1",
+                "title": "Video 1",
+                "description": "跟讀練習",
+                "file": "videos/video1.json"
+            }
+        ]
     }
 ]

@@ -17,10 +17,19 @@ export interface GrammarPoint {
     examples?: Example[];
 }
 
+export interface TranscriptLine {
+    start: string; // "00:00:00.000"
+    end: string;   // "00:00:02.140"
+    korean: string;
+    chinese: string;
+}
+
 export interface LessonContent {
-    grammar: GrammarPoint[];
-    examples: Example[]; // Examples used for Unit Review
-    supplementary: string; // Markdown or text
+    grammar?: GrammarPoint[];
+    examples?: Example[]; // Examples used for Unit Review
+    supplementary?: string; // Markdown or text
+    video_link?: string;
+    transcript?: TranscriptLine[];
 }
 
 export interface Lesson {
