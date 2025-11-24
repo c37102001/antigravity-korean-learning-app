@@ -30,17 +30,23 @@ export const LessonReviewGame: React.FC = () => {
     // Audio = Korean (Word/Phrase)
 
     // If frontSide is 'answer', we swap Front and Back
-    const items: ReviewItem[] = lesson.content.examples.map((ex, index) => {
-        const chinese = ex.chinese;
-        const korean = ex.korean;
+    const getReviewItems = (): ReviewItem[] => {
+        if (!lesson) return [];
 
-        return {
-            id: `ex${index + 1}`,
-            front: frontSide === 'question' ? chinese : korean,
-            back: frontSide === 'question' ? korean : chinese,
-            audio: korean // Audio is always the Korean
-        };
-    });
+        const grammarExamples = lesson.content.grammar
+            ? lesson.content.grammar.flatMap(g => g.examples || [])
+            : [];
+
+        const allExamples = [...(lesson.content.examples || []), ...grammarExamples];
+
+        return allExamples.map((ex, index) => ({
+            id: `ex-${index}`,
+            front: frontSide === 'answer' ? ex.korean : ex.chinese,
+            back: frontSide === 'answer' ? ex.chinese : ex.korean,
+            audio: ex.korean
+        }));
+    };
+    const items: ReviewItem[] = getReviewItems();
 
     if (items.length === 0) {
         return (

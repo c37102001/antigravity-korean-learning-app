@@ -13,7 +13,8 @@ export interface Example {
 
 export interface GrammarPoint {
     title: string;
-    explanation: string;
+    explanation: string | string[];
+    examples?: Example[];
 }
 
 export interface LessonContent {

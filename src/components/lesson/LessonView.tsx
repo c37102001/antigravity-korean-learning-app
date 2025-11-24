@@ -13,6 +13,9 @@ interface LessonViewProps {
 export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
     const { folderId, lessonId } = useParams<{ folderId: string; lessonId: string }>();
 
+    const hasReviewableContent = (content.examples && content.examples.length > 0) ||
+        (content.grammar && content.grammar.some(g => g.examples && g.examples.length > 0));
+
     return (
         <div className="mx-auto max-w-2xl">
             {/* Grammar Section */}
@@ -40,7 +43,7 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
             )}
 
             {/* Unit Review Button */}
-            {content.examples.length > 0 && (
+            {hasReviewableContent && (
                 <div className="mt-12 mb-8 text-center">
                     <div className="relative py-4">
                         <div className="absolute inset-0 flex items-center">
