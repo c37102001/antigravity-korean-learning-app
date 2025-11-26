@@ -202,9 +202,21 @@
         "lessons": [
             {
                 "id": "video1",
-                "title": "Video 1",
+                "title": "自我介紹",
                 "description": "跟讀練習",
                 "file": "videos/video1.json"
+            },
+            {
+                "id": "video2",
+                "title": "日常生活對話",
+                "description": "跟讀練習",
+                "file": "videos/video2.json"
+            },
+            {
+                "id": "video3",
+                "title": "日常作息介紹",
+                "description": "跟讀練習",
+                "file": "videos/video3.json"
             }
         ]
     }
