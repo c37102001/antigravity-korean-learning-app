@@ -4,8 +4,7 @@ import type { LessonContent } from '../../types';
 import { GrammarCard } from './GrammarCard';
 import { ExampleSection } from './ExampleSection';
 import { SupplementSection } from './SupplementSection';
-import { VideoPlayer } from '../video/VideoPlayer';
-import { TranscriptList } from '../video/TranscriptList';
+import { VideoSection } from '../video/VideoSection';
 import { Trophy } from 'lucide-react';
 
 interface LessonViewProps {
@@ -23,13 +22,6 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
     const handleTranscriptClick = (start: number, end: number) => {
         setLoopRange({ start, end });
         setIsLooping(false); // Disable full loop if segment loop is active
-    };
-
-    // Extract video ID from URL
-    const getVideoId = (url: string) => {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : null;
     };
 
     const renderComponent = (key: string) => {
@@ -58,52 +50,19 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
                     </div>
                 ) : null;
 
-            case 'video_link':
-                return content.video_link ? (
+            case 'video_component':
+                return content.video_component ? (
                     <div key="video" className="mb-10">
-                        <VideoPlayer
-                            videoId={getVideoId(content.video_link) || ''}
+                        <VideoSection
+                            data={content.video_component}
                             loopRange={loopRange}
                             isLooping={isLooping}
-                        />
-                        <div className="mt-4 flex items-center justify-between">
-                            <button
-                                onClick={() => {
-                                    setIsLooping(!isLooping);
-                                    setLoopRange(null); // Clear segment loop if full loop is toggled
-                                }}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isLooping
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                                    <path d="M3 3v5h5" />
-                                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                                    <path d="M16 21h5v-5" />
-                                </svg>
-                                {isLooping ? '循環播放中' : '循環播放影片'}
-                            </button>
-                            {loopRange && (
-                                <button
-                                    onClick={() => setLoopRange(null)}
-                                    className="text-sm text-slate-500 hover:text-slate-700"
-                                >
-                                    取消單句循環
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ) : null;
-
-            case 'transcript':
-                return content.transcript ? (
-                    <div key="transcript" className="mb-10">
-                        <TranscriptList
-                            transcript={content.transcript}
-                            onLineClick={handleTranscriptClick}
-                            activeLineIndex={-1}
+                            onLoopToggle={() => {
+                                setIsLooping(!isLooping);
+                                setLoopRange(null);
+                            }}
+                            onLoopRangeClear={() => setLoopRange(null)}
+                            onTranscriptClick={handleTranscriptClick}
                         />
                     </div>
                 ) : null;

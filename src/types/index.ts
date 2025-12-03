@@ -24,12 +24,16 @@ export interface TranscriptLine {
     chinese: string;
 }
 
+export interface VideoComponentData {
+    link: string;
+    transcript?: TranscriptLine[];
+}
+
 export interface LessonContent {
     grammar?: GrammarPoint[];
     examples?: Example[]; // Examples used for Unit Review
     supplementary?: string; // Markdown or text
-    video_link?: string;
-    transcript?: TranscriptLine[];
+    video_component?: VideoComponentData;
 }
 
 export interface Lesson {
