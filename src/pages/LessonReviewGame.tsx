@@ -34,8 +34,8 @@ export const LessonReviewGame: React.FC = () => {
         if (!lesson) return [];
 
         // Handle Video Lessons (Transcript)
-        if (lesson.content.transcript && lesson.content.transcript.length > 0) {
-            return lesson.content.transcript.map((line, index) => ({
+        if (lesson.content.video_component?.transcript && lesson.content.video_component.transcript.length > 0) {
+            return lesson.content.video_component.transcript.map((line, index) => ({
                 id: `trans-${index}`,
                 front: frontSide === 'answer' ? line.korean : line.chinese,
                 back: frontSide === 'answer' ? line.chinese : line.korean,
