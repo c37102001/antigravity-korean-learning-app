@@ -4,7 +4,7 @@ import { curriculum } from '../data/curriculum';
 import { LessonView } from '../components/lesson/LessonView';
 import { VideoPlayer } from '../components/video/VideoPlayer';
 import { TranscriptList } from '../components/video/TranscriptList';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Trophy } from 'lucide-react';
 
 export const DayView: React.FC = () => {
     const { folderId, lessonId } = useParams<{ folderId: string; lessonId: string }>();
@@ -88,6 +88,25 @@ export const DayView: React.FC = () => {
                             onLineClick={handleTranscriptClick}
                             activeLineIndex={-1} // Optional: could track active line based on time
                         />
+
+                        {/* Unit Review Button for Video Lessons */}
+                        <div className="mt-12 mb-8 text-center">
+                            <div className="relative py-4">
+                                <div className="absolute inset-0 flex items-center">
+                                    <div className="w-full border-t border-slate-200"></div>
+                                </div>
+                                <div className="relative flex justify-center">
+                                    <span className="bg-slate-50 px-4 text-sm text-slate-500">完成學習了嗎？</span>
+                                </div>
+                            </div>
+                            <Link
+                                to={`/folder/${folderId}/lesson/${lessonId}/review`}
+                                className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 hover:scale-105 hover:shadow-xl"
+                            >
+                                <Trophy className="h-6 w-6" />
+                                開始單元複習
+                            </Link>
+                        </div>
                     </div>
                 </div>
             ) : (

@@ -33,6 +33,17 @@ export const LessonReviewGame: React.FC = () => {
     const getReviewItems = (): ReviewItem[] => {
         if (!lesson) return [];
 
+        // Handle Video Lessons (Transcript)
+        if (lesson.content.transcript && lesson.content.transcript.length > 0) {
+            return lesson.content.transcript.map((line, index) => ({
+                id: `trans-${index}`,
+                front: frontSide === 'answer' ? line.korean : line.chinese,
+                back: frontSide === 'answer' ? line.chinese : line.korean,
+                audio: line.korean
+            }));
+        }
+
+        // Handle Standard Lessons (Examples + Grammar Examples)
         const grammarExamples = lesson.content.grammar
             ? lesson.content.grammar.flatMap(g => g.examples || [])
             : [];

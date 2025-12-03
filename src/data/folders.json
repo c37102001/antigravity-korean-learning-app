@@ -196,6 +196,31 @@
         ]
     },
     {
+        "id": "time_and_number",
+        "title": "時間和數字",
+        "description": "時間和數字",
+        "lessons": [
+            {
+                "id": "time1",
+                "title": "日期",
+                "description": "時間相關單字入門（早上／中午／今天／明天…）",
+                "file": "time_number/day.json"
+            },
+            {
+                "id": "time2",
+                "title": "漢字數字",
+                "description": "漢字數字",
+                "file": "time_number/number_ch.json"
+            },
+            {
+                "id": "time3",
+                "title": "固有數字",
+                "description": "固有數字",
+                "file": "time_number/number_ko.json"
+            }
+        ]
+    },
+    {
         "id": "videos",
         "title": "跟讀練習影片",
         "description": "跟讀練習影片",
