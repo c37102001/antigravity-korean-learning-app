@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { LessonContent } from '../../types';
 import { GrammarCard } from './GrammarCard';
@@ -13,16 +13,9 @@ interface LessonViewProps {
 
 export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
     const { folderId, lessonId } = useParams<{ folderId: string; lessonId: string }>();
-    const [loopRange, setLoopRange] = useState<{ start: number; end: number } | null>(null);
-    const [isLooping, setIsLooping] = useState(false);
 
     const hasReviewableContent = (content.examples && content.examples.length > 0) ||
         (content.grammar && content.grammar.some(g => g.examples && g.examples.length > 0));
-
-    const handleTranscriptClick = (start: number, end: number) => {
-        setLoopRange({ start, end });
-        setIsLooping(false); // Disable full loop if segment loop is active
-    };
 
     const renderComponent = (key: string) => {
         switch (key) {
@@ -57,14 +50,6 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
                             <VideoSection
                                 key={`video-${index}`}
                                 data={videoData}
-                                loopRange={loopRange}
-                                isLooping={isLooping}
-                                onLoopToggle={() => {
-                                    setIsLooping(!isLooping);
-                                    setLoopRange(null);
-                                }}
-                                onLoopRangeClear={() => setLoopRange(null)}
-                                onTranscriptClick={handleTranscriptClick}
                             />
                         ))}
                     </div>

@@ -5,23 +5,15 @@ import { TranscriptList } from './TranscriptList';
 
 interface VideoSectionProps {
     data: VideoComponentData;
-    loopRange: { start: number; end: number } | null;
-    isLooping: boolean;
-    onLoopToggle: () => void;
-    onLoopRangeClear: () => void;
-    onTranscriptClick: (start: number, end: number) => void;
 }
 
 export const VideoSection: React.FC<VideoSectionProps> = ({
-    data,
-    loopRange,
-    isLooping,
-    onLoopToggle,
-    onLoopRangeClear,
-    onTranscriptClick
+    data
 }) => {
     const videoContainerRef = useRef<HTMLDivElement>(null);
     const [containerHeight, setContainerHeight] = useState<number | undefined>(undefined);
+    const [loopRange, setLoopRange] = useState<{ start: number; end: number } | null>(null);
+    const [isLooping, setIsLooping] = useState(false);
 
     // Extract video ID from URL
     const getVideoId = (url: string) => {
@@ -46,6 +38,20 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
         return () => window.removeEventListener('resize', updateHeight);
     }, []);
 
+    const handleTranscriptClick = (start: number, end: number) => {
+        setLoopRange({ start, end });
+        setIsLooping(false); // Disable full loop if segment loop is active
+    };
+
+    const handleLoopToggle = () => {
+        setIsLooping(!isLooping);
+        setLoopRange(null);
+    };
+
+    const handleLoopRangeClear = () => {
+        setLoopRange(null);
+    };
+
     const videoId = getVideoId(data.link);
 
     if (!videoId) return null;
@@ -61,7 +67,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                 />
                 <div className="mt-4 flex items-center justify-between">
                     <button
-                        onClick={onLoopToggle}
+                        onClick={handleLoopToggle}
                         className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isLooping
                             ? 'bg-indigo-600 text-white'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -77,7 +83,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                     </button>
                     {loopRange && (
                         <button
-                            onClick={onLoopRangeClear}
+                            onClick={handleLoopRangeClear}
                             className="text-sm text-slate-500 hover:text-slate-700"
                         >
                             取消單句循環
@@ -97,7 +103,7 @@ export const VideoSection: React.FC<VideoSectionProps> = ({
                 >
                     <TranscriptList
                         transcript={data.transcript}
-                        onLineClick={onTranscriptClick}
+                        onLineClick={handleTranscriptClick}
                         activeLineIndex={-1}
                     />
                 </div>
