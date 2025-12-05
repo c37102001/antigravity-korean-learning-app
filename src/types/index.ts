@@ -33,7 +33,8 @@ export interface LessonContent {
     grammar?: GrammarPoint[];
     examples?: Example[]; // Examples used for Unit Review
     supplementary?: string; // Markdown or text
-    video_component?: VideoComponentData;
+    video_components?: VideoComponentData[];
+    transcript?: TranscriptLine[]; // Deprecated, use video_components instead
 }
 
 export interface Lesson {

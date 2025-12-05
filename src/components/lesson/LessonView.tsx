@@ -50,20 +50,23 @@ export const LessonView: React.FC<LessonViewProps> = ({ content }) => {
                     </div>
                 ) : null;
 
-            case 'video_component':
-                return content.video_component ? (
-                    <div key="video" className="mb-10">
-                        <VideoSection
-                            data={content.video_component}
-                            loopRange={loopRange}
-                            isLooping={isLooping}
-                            onLoopToggle={() => {
-                                setIsLooping(!isLooping);
-                                setLoopRange(null);
-                            }}
-                            onLoopRangeClear={() => setLoopRange(null)}
-                            onTranscriptClick={handleTranscriptClick}
-                        />
+            case 'video_components':
+                return content.video_components && content.video_components.length > 0 ? (
+                    <div key="videos" className="mb-10 flex flex-col gap-10">
+                        {content.video_components.map((videoData, index) => (
+                            <VideoSection
+                                key={`video-${index}`}
+                                data={videoData}
+                                loopRange={loopRange}
+                                isLooping={isLooping}
+                                onLoopToggle={() => {
+                                    setIsLooping(!isLooping);
+                                    setLoopRange(null);
+                                }}
+                                onLoopRangeClear={() => setLoopRange(null)}
+                                onTranscriptClick={handleTranscriptClick}
+                            />
+                        ))}
                     </div>
                 ) : null;
 

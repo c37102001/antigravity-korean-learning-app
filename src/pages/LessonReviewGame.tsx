@@ -33,14 +33,17 @@ export const LessonReviewGame: React.FC = () => {
     const getReviewItems = (): ReviewItem[] => {
         if (!lesson) return [];
 
-        // Handle Video Lessons (Transcript)
-        if (lesson.content.video_component?.transcript && lesson.content.video_component.transcript.length > 0) {
-            return lesson.content.video_component.transcript.map((line, index) => ({
-                id: `trans-${index}`,
-                front: frontSide === 'answer' ? line.korean : line.chinese,
-                back: frontSide === 'answer' ? line.chinese : line.korean,
-                audio: line.korean
-            }));
+        // Handle Video Lessons (Transcripts from all videos)
+        if (lesson.content.video_components && lesson.content.video_components.length > 0) {
+            const allTranscripts = lesson.content.video_components.flatMap(video => video.transcript || []);
+            if (allTranscripts.length > 0) {
+                return allTranscripts.map((line, index) => ({
+                    id: `trans-${index}`,
+                    front: frontSide === 'answer' ? line.korean : line.chinese,
+                    back: frontSide === 'answer' ? line.chinese : line.korean,
+                    audio: line.korean
+                }));
+            }
         }
 
         // Handle Standard Lessons (Examples + Grammar Examples)
