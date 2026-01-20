@@ -12,9 +12,6 @@ export const Header: React.FC = () => {
                 </Link>
 
                 <nav className="flex items-center gap-4">
-                    <Link to="/review" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
-                        複習區
-                    </Link>
                     <Link to="/" className="p-2 text-slate-600 hover:text-indigo-600 transition-colors">
                         <Home className="h-5 w-5" />
                     </Link>
