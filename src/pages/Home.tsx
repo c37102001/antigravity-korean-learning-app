@@ -15,6 +15,27 @@ export const Home: React.FC = () => {
         </p>
       </div>
 
+      <div className="mb-8">
+        <Link
+          to="/personal"
+          className="group relative block overflow-hidden rounded-2xl border-2 border-indigo-100 bg-indigo-50 p-6 transition-all hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-indigo-900 group-hover:text-indigo-700 transition-colors">
+                個人字卡學習區
+              </h2>
+              <p className="mt-2 text-lg text-indigo-700">
+                建立你的專屬字卡，隨時複習新單字與句子。
+              </p>
+            </div>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-indigo-600 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+              <ChevronRight className="h-6 w-6" />
+            </div>
+          </div>
+        </Link>
+      </div>
+
       <div className="grid gap-6 sm:grid-cols-1">
         {curriculum.folders.map((folder) => (
           <Link
