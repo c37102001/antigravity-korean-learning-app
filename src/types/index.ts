@@ -60,4 +60,5 @@ export interface ReviewItem {
     front: string;
     back: string;
     audio: string;
+    isStarred?: boolean;
 }

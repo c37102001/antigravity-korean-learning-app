@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, ArrowRight, Keyboard, MousePointer2 } from 'lucide-react';
+import { Volume2, ArrowRight, Keyboard, MousePointer2, Star } from 'lucide-react';
 import type { ReviewItem } from '../../types';
 
 interface TranslationGameProps {
     items: ReviewItem[];
     mode?: 'sequential' | 'random';
     title?: string;
+    onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 'random', title = '翻譯練習' }) => {
+export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 'random', title = '翻譯練習', onToggleStar }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [input, setInput] = useState('');
     const [showResult, setShowResult] = useState(false);
@@ -89,8 +90,8 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
                     <button
                         onClick={() => setGameMode('choice')}
                         className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${gameMode === 'choice'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
                     >
                         <MousePointer2 className="h-4 w-4" />
@@ -99,8 +100,8 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
                     <button
                         onClick={() => setGameMode('typing')}
                         className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${gameMode === 'typing'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
                     >
                         <Keyboard className="h-4 w-4" />
@@ -110,7 +111,15 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-                <div className="mb-8 text-center">
+                <div className="mb-8 text-center relative">
+                    {onToggleStar && currentItem && (
+                        <button
+                            onClick={() => onToggleStar(currentItem.id, currentItem.isStarred || false)}
+                            className={`absolute top-0 right-0 p-2 rounded-full hover:bg-yellow-50 ${currentItem.isStarred ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                        >
+                            <Star className={`h-6 w-6 ${currentItem.isStarred ? 'fill-current' : ''}`} />
+                        </button>
+                    )}
                     <p className="mb-2 text-sm text-slate-500">請翻譯成韓文</p>
                     <h3 className="text-3xl font-bold text-slate-900">{currentItem.front}</h3>
                 </div>

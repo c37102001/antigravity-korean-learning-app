@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { FlashcardGame } from '../../components/review/FlashcardGame';
@@ -11,9 +11,11 @@ interface FlashcardData {
     id: string;
     korean: string;
     chinese: string;
+    order?: number;
+    isStarred?: boolean;
 }
 
-const usePersonalCards = (folderId: string | undefined) => {
+const usePersonalCards = (folderId: string | undefined, onlyStarred: boolean) => {
     const { currentUser } = useAuth();
     const [cards, setCards] = useState<FlashcardData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -30,10 +32,14 @@ const usePersonalCards = (folderId: string | undefined) => {
                 // Revert to createdAt to ensure we get all cards
                 const q = query(cardsRef, orderBy('createdAt', 'asc'));
                 const snapshot = await getDocs(q);
-                const cardsData = snapshot.docs.map(doc => ({
+                let cardsData = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 })) as FlashcardData[];
+
+                if (onlyStarred) {
+                    cardsData = cardsData.filter(c => c.isStarred);
+                }
 
                 // Client-side sort by order
                 // Note: FlashcardData interface in this file doesn't have 'order', but the data might.
@@ -53,47 +59,57 @@ const usePersonalCards = (folderId: string | undefined) => {
         };
 
         fetchCards();
-    }, [currentUser, folderId]);
+    }, [currentUser, folderId, onlyStarred]);
 
-    return { cards, loading };
+    const handleToggleStar = async (cardId: string, currentStatus: boolean) => {
+        if (!currentUser || !folderId) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId, 'cards', cardId), {
+                isStarred: !currentStatus
+            });
+            // Update local state
+            setCards(prev => prev.map(c => c.id === cardId ? { ...c, isStarred: !currentStatus } : c));
+        } catch (error) {
+            console.error("Error toggling star:", error);
+        }
+    };
+
+    return { cards, loading, handleToggleStar };
 };
 
 export const PersonalFlashcards = () => {
     const { folderId } = useParams<{ folderId: string }>();
     const [searchParams] = useSearchParams();
-    const { cards, loading } = usePersonalCards(folderId);
+    const onlyStarred = searchParams.get('starred') === 'true';
+    const { cards, loading, handleToggleStar } = usePersonalCards(folderId, onlyStarred);
 
     const mode = (searchParams.get('mode') as 'random' | 'sequential') || 'random';
     const frontSide = searchParams.get('front') || 'question';
     const autoAudio = searchParams.get('audio') === 'true';
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
-    if (cards.length === 0) return <div className="p-8 text-center">沒有字卡</div>;
+    if (cards.length === 0) return <div className="p-8 text-center">{onlyStarred ? '沒有加星號的字卡' : '沒有字卡'}</div>;
 
     const items = cards.map(c => {
-        // frontSide 'question' means Korean (default)
-        // frontSide 'answer' means Chinese
-        // But wait, in FlashcardGame:
-        // front is shown first.
-        // If frontSide is 'question' (Korean), we want Korean on front.
-        // If frontSide is 'answer' (Chinese), we want Chinese on front.
         const isKoreanFront = frontSide === 'question';
 
         return {
             id: c.id,
             front: isKoreanFront ? c.korean : c.chinese,
             back: isKoreanFront ? c.chinese : c.korean,
-            audio: c.korean // Audio is always Korean
+            audio: c.korean,
+            isStarred: c.isStarred
         };
     });
 
-    return <FlashcardGame items={items} title="個人單字卡" mode={mode} autoAudio={autoAudio} />;
+    return <FlashcardGame items={items} title="個人單字卡" mode={mode} autoAudio={autoAudio} onToggleStar={handleToggleStar} />;
 };
 
 export const PersonalTranslation = () => {
     const { folderId } = useParams<{ folderId: string }>();
     const [searchParams] = useSearchParams();
-    const { cards, loading } = usePersonalCards(folderId);
+    const onlyStarred = searchParams.get('starred') === 'true';
+    const { cards, loading, handleToggleStar } = usePersonalCards(folderId, onlyStarred);
 
     const mode = (searchParams.get('mode') as 'random' | 'sequential') || 'random';
     // Translation game usually: Show Chinese (Question), Input Korean (Answer)
@@ -124,42 +140,45 @@ export const PersonalTranslation = () => {
     // For now, I will implement basic param reading.
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
-    if (cards.length === 0) return <div className="p-8 text-center">沒有字卡</div>;
+    if (cards.length === 0) return <div className="p-8 text-center">{onlyStarred ? '沒有加星號的字卡' : '沒有字卡'}</div>;
 
     let items = cards.map(c => ({
         id: c.id,
         front: c.chinese,
         back: c.korean,
-        audio: c.korean
+        audio: c.korean,
+        isStarred: c.isStarred
     }));
 
     if (mode === 'random') {
         items = [...items].sort(() => Math.random() - 0.5);
     }
 
-    return <TranslationGame items={items} title="個人翻譯練習" />;
+    return <TranslationGame items={items} title="個人翻譯練習" onToggleStar={handleToggleStar} />;
 };
 
 export const PersonalListening = () => {
     const { folderId } = useParams<{ folderId: string }>();
     const [searchParams] = useSearchParams();
-    const { cards, loading } = usePersonalCards(folderId);
+    const onlyStarred = searchParams.get('starred') === 'true';
+    const { cards, loading, handleToggleStar } = usePersonalCards(folderId, onlyStarred);
 
     const mode = (searchParams.get('mode') as 'random' | 'sequential') || 'random';
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
-    if (cards.length === 0) return <div className="p-8 text-center">沒有字卡</div>;
+    if (cards.length === 0) return <div className="p-8 text-center">{onlyStarred ? '沒有加星號的字卡' : '沒有字卡'}</div>;
 
     let items = cards.map(c => ({
         id: c.id,
         front: c.chinese,
         back: c.korean,
-        audio: c.korean
+        audio: c.korean,
+        isStarred: c.isStarred
     }));
 
     if (mode === 'random') {
         items = [...items].sort(() => Math.random() - 0.5);
     }
 
-    return <ListeningGame items={items} title="個人聽力練習" />;
+    return <ListeningGame items={items} title="個人聽力練習" onToggleStar={handleToggleStar} />;
 };

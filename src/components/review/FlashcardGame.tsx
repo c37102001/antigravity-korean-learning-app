@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Volume2, RotateCw, ArrowRight, ArrowLeft, Play, Pause } from 'lucide-react';
+import { Volume2, RotateCw, ArrowRight, ArrowLeft, Play, Pause, Star } from 'lucide-react';
 import type { ReviewItem } from '../../types';
 
 interface FlashcardGameProps {
@@ -8,13 +8,15 @@ interface FlashcardGameProps {
     mode?: 'sequential' | 'random';
     title?: string;
     autoAudio?: boolean;
+    onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
 export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     items,
     mode = 'random',
     title = '單字卡',
-    autoAudio = true
+    autoAudio = true,
+    onToggleStar
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
@@ -184,6 +186,17 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
                         className="absolute h-full w-full rounded-2xl border-2 border-indigo-100 bg-white p-8 shadow-xl flex flex-col items-center justify-center text-center"
                         style={{ backfaceVisibility: 'hidden' }}
                     >
+                        {onToggleStar && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleStar(currentCard.id, currentCard.isStarred || false);
+                                }}
+                                className={`absolute top-4 right-4 p-2 rounded-full hover:bg-yellow-50 ${currentCard.isStarred ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                            >
+                                <Star className={`h-6 w-6 ${currentCard.isStarred ? 'fill-current' : ''}`} />
+                            </button>
+                        )}
                         <div className="text-3xl font-bold text-slate-900 mb-4">{currentCard.front}</div>
                         <button
                             onClick={(e) => {
@@ -206,6 +219,17 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
                             transform: 'rotateY(180deg)'
                         }}
                     >
+                        {onToggleStar && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onToggleStar(currentCard.id, currentCard.isStarred || false);
+                                }}
+                                className={`absolute top-4 right-4 p-2 rounded-full hover:bg-yellow-50 ${currentCard.isStarred ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                            >
+                                <Star className={`h-6 w-6 ${currentCard.isStarred ? 'fill-current' : ''}`} />
+                            </button>
+                        )}
                         <div className="text-3xl font-bold text-emerald-900 mb-4">{currentCard.back}</div>
                         <button
                             onClick={(e) => {

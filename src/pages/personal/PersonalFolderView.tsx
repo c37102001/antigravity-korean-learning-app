@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText, Star } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 
 interface FlashcardData {
@@ -12,6 +12,7 @@ interface FlashcardData {
     chinese: string;
     createdAt: any;
     order?: number;
+    isStarred?: boolean;
 }
 
 export const PersonalFolderView = () => {
@@ -19,6 +20,8 @@ export const PersonalFolderView = () => {
     const { currentUser } = useAuth();
     const [cards, setCards] = useState<FlashcardData[]>([]);
     const [folderName, setFolderName] = useState('');
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editName, setEditName] = useState('');
     const [newKorean, setNewKorean] = useState('');
     const [newChinese, setNewChinese] = useState('');
 
@@ -35,6 +38,7 @@ export const PersonalFolderView = () => {
     const [mode, setMode] = useState<'random' | 'sequential'>('random');
     const [frontSide, setFrontSide] = useState<'question' | 'answer'>('question');
     const [autoAudio, setAutoAudio] = useState(true);
+    const [onlyStarred, setOnlyStarred] = useState(false);
 
     const navigate = useNavigate();
 
@@ -45,7 +49,9 @@ export const PersonalFolderView = () => {
         const fetchFolder = async () => {
             const folderDoc = await getDoc(doc(db, 'users', currentUser.uid, 'folders', folderId));
             if (folderDoc.exists()) {
-                setFolderName(folderDoc.data().name);
+                const name = folderDoc.data().name;
+                setFolderName(name);
+                setEditName(name);
             } else {
                 navigate('/personal');
             }
@@ -151,6 +157,17 @@ export const PersonalFolderView = () => {
         }
     };
 
+    const handleToggleStar = async (cardId: string, currentStatus: boolean) => {
+        if (!currentUser || !folderId) return;
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId, 'cards', cardId), {
+                isStarred: !currentStatus
+            });
+        } catch (error) {
+            console.error("Error toggling star:", error);
+        }
+    };
+
     const playAudio = (text: string) => {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -216,6 +233,20 @@ export const PersonalFolderView = () => {
         setIsReordering(!isReordering);
     };
 
+    const handleUpdateFolderName = async () => {
+        if (!currentUser || !folderId || !editName.trim()) return;
+
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId), {
+                name: editName.trim()
+            });
+            setFolderName(editName.trim());
+            setIsEditingName(false);
+        } catch (error) {
+            console.error("Error updating folder name:", error);
+        }
+    };
+
     const handleBatchAdd = async () => {
         if (!batchJson.trim() || !currentUser || !folderId) return;
         setBatchError('');
@@ -263,29 +294,65 @@ export const PersonalFolderView = () => {
                     回個人學習區
                 </Link>
                 <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">{folderName}</h1>
+                    <div className="flex-1">
+                        {isEditingName ? (
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="text"
+                                    value={editName}
+                                    onChange={(e) => setEditName(e.target.value)}
+                                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-3xl font-bold text-gray-900 border px-3 py-1"
+                                    autoFocus
+                                />
+                                <button
+                                    onClick={handleUpdateFolderName}
+                                    disabled={!editName.trim()}
+                                    className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                                >
+                                    <Save className="h-6 w-6" />
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsEditingName(false);
+                                        setEditName(folderName);
+                                    }}
+                                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full"
+                                >
+                                    <X className="h-6 w-6" />
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2 group">
+                                <h1 className="text-3xl font-bold text-gray-900">{folderName}</h1>
+                                <button
+                                    onClick={() => setIsEditingName(true)}
+                                    className="p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                                >
+                                    <Pencil className="h-5 w-5" />
+                                </button>
+                            </div>
+                        )}
                         <p className="mt-1 text-sm text-gray-500">共 {cards.length} 張字卡</p>
                     </div>
 
                     {cards.length > 0 && (
                         <div className="flex flex-wrap gap-3">
                             <Link
-                                to={`/personal/folder/${folderId}/review/flashcards?mode=${mode}&front=${frontSide}&audio=${autoAudio}`}
+                                to={`/personal/folder/${folderId}/review/flashcards?mode=${mode}&front=${frontSide}&audio=${autoAudio}&starred=${onlyStarred}`}
                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                                 <BookOpen className="h-4 w-4 mr-2" />
                                 單字卡
                             </Link>
                             <Link
-                                to={`/personal/folder/${folderId}/review/translation?mode=${mode}&front=${frontSide}&audio=${autoAudio}`}
+                                to={`/personal/folder/${folderId}/review/translation?mode=${mode}&front=${frontSide}&audio=${autoAudio}&starred=${onlyStarred}`}
                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
                             >
                                 <PlayCircle className="h-4 w-4 mr-2" />
                                 翻譯練習
                             </Link>
                             <Link
-                                to={`/personal/folder/${folderId}/review/listening?mode=${mode}&front=${frontSide}&audio=${autoAudio}`}
+                                to={`/personal/folder/${folderId}/review/listening?mode=${mode}&front=${frontSide}&audio=${autoAudio}&starred=${onlyStarred}`}
                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700"
                             >
                                 <Headphones className="h-4 w-4 mr-2" />
@@ -341,6 +408,7 @@ export const PersonalFolderView = () => {
                             </div>
                         </div>
 
+
                         {/* Audio Setting */}
                         <div className="flex flex-col gap-2">
                             <span className="text-xs font-medium text-gray-500">語音設定</span>
@@ -356,6 +424,25 @@ export const PersonalFolderView = () => {
                                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${!autoAudio ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
                                     手動播放
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Starred Setting */}
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs font-medium text-gray-500">篩選</span>
+                            <div className="flex rounded-lg bg-gray-100 p-1">
+                                <button
+                                    onClick={() => setOnlyStarred(false)}
+                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${!onlyStarred ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    全部
+                                </button>
+                                <button
+                                    onClick={() => setOnlyStarred(true)}
+                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${onlyStarred ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    僅星號
                                 </button>
                             </div>
                         </div>
@@ -577,6 +664,15 @@ export const PersonalFolderView = () => {
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-1">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleToggleStar(card.id, card.isStarred || false);
+                                                        }}
+                                                        className={`flex-shrink-0 p-2 rounded-full hover:bg-yellow-50 ${card.isStarred ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                                                    >
+                                                        <Star className={`h-5 w-5 ${card.isStarred ? 'fill-current' : ''}`} />
+                                                    </button>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();

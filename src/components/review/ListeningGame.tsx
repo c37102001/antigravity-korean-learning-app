@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Volume2, ArrowRight } from 'lucide-react';
+import { Volume2, ArrowRight, Star } from 'lucide-react';
 import type { ReviewItem } from '../../types';
 
 interface ListeningGameProps {
     items: ReviewItem[];
     mode?: 'sequential' | 'random';
     title?: string;
+    onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'random', title = '聽力練習' }) => {
+export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'random', title = '聽力練習', onToggleStar }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
@@ -77,7 +78,15 @@ export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'ran
 
     return (
         <div className="mx-auto max-w-2xl">
-            <div className="mb-8 text-center">
+            <div className="mb-8 text-center relative">
+                {onToggleStar && currentItem && (
+                    <button
+                        onClick={() => onToggleStar(currentItem.id, currentItem.isStarred || false)}
+                        className={`absolute top-0 right-0 p-2 rounded-full hover:bg-yellow-50 ${currentItem.isStarred ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-400'}`}
+                    >
+                        <Star className={`h-6 w-6 ${currentItem.isStarred ? 'fill-current' : ''}`} />
+                    </button>
+                )}
                 <h2 className="text-2xl font-bold text-slate-900">{title} ({currentIndex + 1}/{shuffledItems.length})</h2>
                 <p className="text-slate-500">請聽韓文，選出正確的意思</p>
             </div>
