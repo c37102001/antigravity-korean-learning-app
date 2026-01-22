@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 
 interface FlashcardData {
@@ -27,6 +27,9 @@ export const PersonalFolderView = () => {
     const [editKorean, setEditKorean] = useState('');
     const [editChinese, setEditChinese] = useState('');
     const [isReordering, setIsReordering] = useState(false);
+    const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
+    const [batchJson, setBatchJson] = useState('');
+    const [batchError, setBatchError] = useState('');
 
     // Review Settings
     const [mode, setMode] = useState<'random' | 'sequential'>('random');
@@ -213,6 +216,45 @@ export const PersonalFolderView = () => {
         setIsReordering(!isReordering);
     };
 
+    const handleBatchAdd = async () => {
+        if (!batchJson.trim() || !currentUser || !folderId) return;
+        setBatchError('');
+
+        try {
+            const parsed = JSON.parse(batchJson);
+            if (!parsed.data || !Array.isArray(parsed.data)) {
+                setBatchError('格式錯誤：缺少 data 陣列');
+                return;
+            }
+
+            const batch = writeBatch(db);
+            let currentOrder = cards.length;
+
+            for (const item of parsed.data) {
+                if (!item.ko || !item.zh) {
+                    setBatchError('格式錯誤：每個項目必須包含 ko 和 zh');
+                    return;
+                }
+
+                const newCardRef = doc(collection(db, 'users', currentUser.uid, 'folders', folderId, 'cards'));
+                batch.set(newCardRef, {
+                    korean: item.ko,
+                    chinese: item.zh,
+                    createdAt: serverTimestamp(),
+                    order: currentOrder++
+                });
+            }
+
+            await batch.commit();
+            setIsBatchModalOpen(false);
+            setBatchJson('');
+            setBatchError('');
+        } catch (e) {
+            console.error("Batch add error:", e);
+            setBatchError('JSON 解析錯誤，請檢查格式是否正確');
+        }
+    };
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
@@ -323,6 +365,7 @@ export const PersonalFolderView = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Add Card Form */}
+                {/* Add Card Form */}
                 <div className="lg:col-span-1">
                     <div className="bg-white rounded-lg shadow p-6 sticky top-8">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">新增字卡</h3>
@@ -355,9 +398,87 @@ export const PersonalFolderView = () => {
                                 <Plus className="h-4 w-4 mr-2" />
                                 新增字卡
                             </button>
+
+                            <div className="relative flex py-2 items-center">
+                                <div className="flex-grow border-t border-gray-300"></div>
+                                <span className="flex-shrink-0 mx-4 text-gray-400 text-xs">或</span>
+                                <div className="flex-grow border-t border-gray-300"></div>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsBatchModalOpen(true)}
+                                className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                            >
+                                <FileText className="h-4 w-4 mr-2" />
+                                批次加入 (JSON)
+                            </button>
                         </form>
                     </div>
                 </div>
+
+                {/* Batch Modal */}
+                {isBatchModalOpen && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                        <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setIsBatchModalOpen(false)}></div>
+
+                            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <div className="sm:flex sm:items-start">
+                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                                批次加入字卡
+                                            </h3>
+                                            <div className="mt-2">
+                                                <p className="text-sm text-gray-500 mb-2">
+                                                    請貼上 JSON 格式的資料。格式如下：
+                                                </p>
+                                                <pre className="bg-gray-100 p-2 rounded text-xs text-gray-600 mb-4 overflow-x-auto">
+                                                    {`{
+  "data": [
+    { "ko": "韓文", "zh": "中文" },
+    ...
+  ]
+}`}
+                                                </pre>
+                                                <textarea
+                                                    value={batchJson}
+                                                    onChange={(e) => setBatchJson(e.target.value)}
+                                                    className="w-full h-64 p-2 border border-gray-300 rounded-md font-mono text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                                    placeholder='{"data": [{"ko": "...", "zh": "..."}]}'
+                                                ></textarea>
+                                                {batchError && (
+                                                    <p className="mt-2 text-sm text-red-600">
+                                                        {batchError}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                    <button
+                                        type="button"
+                                        onClick={handleBatchAdd}
+                                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        加入
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsBatchModalOpen(false)}
+                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        取消
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Cards List */}
                 <div className="lg:col-span-2">
