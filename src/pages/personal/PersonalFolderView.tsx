@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText, Star, Tag } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText, Star, Tag, Download, Copy, Check } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 
 interface FlashcardData {
@@ -42,6 +42,11 @@ export const PersonalFolderView = () => {
     const [isBatchModalOpen, setIsBatchModalOpen] = useState(false);
     const [batchJson, setBatchJson] = useState('');
     const [batchError, setBatchError] = useState('');
+
+    // Export State
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+    const [exportJson, setExportJson] = useState('');
+    const [copySuccess, setCopySuccess] = useState(false);
 
     // Review Settings
     const [mode, setMode] = useState<'random' | 'sequential'>('sequential');
@@ -343,6 +348,28 @@ export const PersonalFolderView = () => {
         } catch (e) {
             console.error("Batch add error:", e);
             setBatchError('JSON 解析錯誤，請檢查格式是否正確');
+        }
+    };
+
+    const handleExport = () => {
+        const exportData = {
+            data: cards.map(c => ({
+                ko: c.korean,
+                zh: c.chinese
+            }))
+        };
+        setExportJson(JSON.stringify(exportData, null, 2));
+        setIsExportModalOpen(true);
+        setCopySuccess(false);
+    };
+
+    const handleCopyExport = async () => {
+        try {
+            await navigator.clipboard.writeText(exportJson);
+            setCopySuccess(true);
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy!', err);
         }
     };
 
@@ -653,6 +680,16 @@ export const PersonalFolderView = () => {
                                 <FileText className="h-4 w-4 mr-2" />
                                 批次加入 (JSON)
                             </button>
+
+                            <button
+                                type="button"
+                                onClick={handleExport}
+                                disabled={cards.length === 0}
+                                className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Download className="h-4 w-4 mr-2" />
+                                匯出所有字卡 (JSON)
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -713,6 +750,144 @@ export const PersonalFolderView = () => {
                                         className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                                     >
                                         取消
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Export Modal */}
+                {isExportModalOpen && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                        <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setIsExportModalOpen(false)}></div>
+
+                            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <div className="sm:flex sm:items-start">
+                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                                匯出所有字卡
+                                            </h3>
+                                            <div className="mt-2">
+                                                <p className="text-sm text-gray-500 mb-2">
+                                                    已將所有字卡整理為 JSON 格式，點擊下方按鈕複製後，可儲存備份或用於其他資料夾的批次加入。
+                                                </p>
+                                                <div className="relative">
+                                                    <textarea
+                                                        readOnly
+                                                        value={exportJson}
+                                                        className="w-full h-64 p-2 border border-gray-300 rounded-md font-mono text-sm bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    ></textarea>
+                                                    <button
+                                                        onClick={handleCopyExport}
+                                                        className={`absolute top-2 right-2 p-2 rounded-md shadow-sm transition-all ${copySuccess ? 'bg-green-100 text-green-700' : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200'}`}
+                                                        title="複製到剪貼簿"
+                                                    >
+                                                        {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyExport}
+                                        className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm ${copySuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                            }`}
+                                    >
+                                        {copySuccess ? (
+                                            <>
+                                                <Check className="h-4 w-4 mr-2" />
+                                                已複製
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="h-4 w-4 mr-2" />
+                                                複製內容
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsExportModalOpen(false)}
+                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        關閉
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Export Modal */}
+                {isExportModalOpen && (
+                    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                        <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                            <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={() => setIsExportModalOpen(false)}></div>
+
+                            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <div className="sm:flex sm:items-start">
+                                        <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                                            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                                                匯出所有字卡
+                                            </h3>
+                                            <div className="mt-2">
+                                                <p className="text-sm text-gray-500 mb-2">
+                                                    已將所有字卡整理為 JSON 格式，點擊下方按鈕複製後，可儲存備份或用於其他資料夾的批次加入。
+                                                </p>
+                                                <div className="relative">
+                                                    <textarea
+                                                        readOnly
+                                                        value={exportJson}
+                                                        className="w-full h-64 p-2 border border-gray-300 rounded-md font-mono text-sm bg-gray-50 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    ></textarea>
+                                                    <button
+                                                        onClick={handleCopyExport}
+                                                        className={`absolute top-2 right-2 p-2 rounded-md shadow-sm transition-all ${copySuccess ? 'bg-green-100 text-green-700' : 'bg-white text-gray-600 hover:text-gray-900 border border-gray-200'}`}
+                                                        title="複製到剪貼簿"
+                                                    >
+                                                        {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                    <button
+                                        type="button"
+                                        onClick={handleCopyExport}
+                                        className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm ${copySuccess ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'
+                                            }`}
+                                    >
+                                        {copySuccess ? (
+                                            <>
+                                                <Check className="h-4 w-4 mr-2" />
+                                                已複製
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Copy className="h-4 w-4 mr-2" />
+                                                複製內容
+                                            </>
+                                        )}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsExportModalOpen(false)}
+                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        關閉
                                     </button>
                                 </div>
                             </div>
