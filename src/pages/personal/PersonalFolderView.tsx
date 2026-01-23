@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, orderBy, getDoc, writeBatch, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
-import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText, Star } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, PlayCircle, BookOpen, Headphones, Shuffle, ListOrdered, Volume2, Pencil, Save, X, GripVertical, FileText, Star, Tag } from 'lucide-react';
 import { Reorder } from 'framer-motion';
 
 interface FlashcardData {
@@ -29,6 +29,10 @@ export const PersonalFolderView = () => {
     const [folderDescription, setFolderDescription] = useState('');
     const [isEditingDescription, setIsEditingDescription] = useState(false);
     const [editDescription, setEditDescription] = useState('');
+
+    // Tags State
+    const [tags, setTags] = useState<string[]>([]);
+    const [newTag, setNewTag] = useState('');
 
     // Edit State
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -59,6 +63,7 @@ export const PersonalFolderView = () => {
                 setEditName(data.name);
                 setFolderDescription(data.description || '');
                 setEditDescription(data.description || '');
+                setTags(data.tags || []);
             } else {
                 navigate('/personal');
             }
@@ -268,6 +273,40 @@ export const PersonalFolderView = () => {
         }
     };
 
+    const handleAddTag = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!currentUser || !folderId || !newTag.trim()) return;
+
+        const tagToAdd = newTag.trim();
+        if (tags.includes(tagToAdd)) {
+            setNewTag('');
+            return;
+        }
+
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId), {
+                tags: arrayUnion(tagToAdd)
+            });
+            setTags([...tags, tagToAdd]);
+            setNewTag('');
+        } catch (error) {
+            console.error("Error adding tag:", error);
+        }
+    };
+
+    const handleRemoveTag = async (tagToRemove: string) => {
+        if (!currentUser || !folderId) return;
+
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId), {
+                tags: arrayRemove(tagToRemove)
+            });
+            setTags(tags.filter(t => t !== tagToRemove));
+        } catch (error) {
+            console.error("Error removing tag:", error);
+        }
+    };
+
     const handleBatchAdd = async () => {
         if (!batchJson.trim() || !currentUser || !folderId) return;
         setBatchError('');
@@ -418,6 +457,32 @@ export const PersonalFolderView = () => {
                                     </div>
                                 </div>
                             )}
+                        </div>
+
+                        {/* Tags Section */}
+                        <div className="mt-2 mb-6 flex flex-wrap items-center gap-2">
+                            {tags.map(tag => (
+                                <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                    <Tag className="w-3 h-3 mr-1" />
+                                    {tag}
+                                    <button
+                                        onClick={() => handleRemoveTag(tag)}
+                                        className="ml-1.5 inline-flex items-center justify-center text-indigo-400 hover:text-indigo-600 focus:outline-none"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </span>
+                            ))}
+                            <form onSubmit={handleAddTag} className="relative flex items-center">
+                                <Plus className="w-4 h-4 text-gray-400 absolute left-2" />
+                                <input
+                                    type="text"
+                                    value={newTag}
+                                    onChange={(e) => setNewTag(e.target.value)}
+                                    placeholder="新增標籤..."
+                                    className="pl-8 pr-3 py-1 text-xs border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 w-32 transition-all focus:w-48"
+                                />
+                            </form>
                         </div>
 
                         <p className="mt-1 text-sm text-gray-500">共 {cards.length} 張字卡</p>

@@ -10,14 +10,24 @@ interface FolderData {
     id: string;
     name: string;
     createdAt: any;
+    tags?: string[];
 }
 
 export const PersonalDashboard = () => {
     const { currentUser } = useAuth();
     const [folders, setFolders] = useState<FolderData[]>([]);
+    const [selectedTag, setSelectedTag] = useState<string | null>(null);
     const [newFolderName, setNewFolderName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
     const navigate = useNavigate();
+
+    // Derived state for all unique tags
+    const allTags = Array.from(new Set(folders.flatMap(f => f.tags || []))).sort();
+
+    // Filtered folders
+    const filteredFolders = selectedTag
+        ? folders.filter(f => f.tags?.includes(selectedTag))
+        : folders;
 
     useEffect(() => {
         if (!currentUser) {
@@ -134,9 +144,36 @@ export const PersonalDashboard = () => {
                 )}
             </div>
 
+            {/* Tags Filter Bar */}
+            {allTags.length > 0 && (
+                <div className="mb-6 flex flex-wrap gap-2">
+                    <button
+                        onClick={() => setSelectedTag(null)}
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${!selectedTag
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                            }`}
+                    >
+                        全部
+                    </button>
+                    {allTags.map(tag => (
+                        <button
+                            key={tag}
+                            onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${tag === selectedTag
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+                                }`}
+                        >
+                            {tag}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {/* Folders Grid */}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {folders.map((folder) => (
+                {filteredFolders.map((folder) => (
                     <div
                         key={folder.id}
                         className="relative group bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow border border-gray-200"
@@ -148,9 +185,16 @@ export const PersonalDashboard = () => {
                                     <h3 className="text-lg font-medium text-gray-900 group-hover:text-indigo-600">
                                         {folder.name}
                                     </h3>
-                                    <p className="text-sm text-gray-500">
+                                    <p className="text-sm text-gray-500 mb-2">
                                         點擊進入學習
                                     </p>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {folder.tags?.map(tag => (
+                                            <span key={tag} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                                {tag}
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
                             </Link>
                             <button
