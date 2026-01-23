@@ -25,6 +25,11 @@ export const PersonalFolderView = () => {
     const [newKorean, setNewKorean] = useState('');
     const [newChinese, setNewChinese] = useState('');
 
+    // Folder Description State
+    const [folderDescription, setFolderDescription] = useState('');
+    const [isEditingDescription, setIsEditingDescription] = useState(false);
+    const [editDescription, setEditDescription] = useState('');
+
     // Edit State
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editKorean, setEditKorean] = useState('');
@@ -35,8 +40,8 @@ export const PersonalFolderView = () => {
     const [batchError, setBatchError] = useState('');
 
     // Review Settings
-    const [mode, setMode] = useState<'random' | 'sequential'>('random');
-    const [frontSide, setFrontSide] = useState<'question' | 'answer'>('question');
+    const [mode, setMode] = useState<'random' | 'sequential'>('sequential');
+    const [frontSide, setFrontSide] = useState<'question' | 'answer'>('answer');
     const [autoAudio, setAutoAudio] = useState(true);
     const [onlyStarred, setOnlyStarred] = useState(false);
 
@@ -45,13 +50,15 @@ export const PersonalFolderView = () => {
     useEffect(() => {
         if (!currentUser || !folderId) return;
 
-        // Fetch folder name
+        // Fetch folder name and description
         const fetchFolder = async () => {
             const folderDoc = await getDoc(doc(db, 'users', currentUser.uid, 'folders', folderId));
             if (folderDoc.exists()) {
-                const name = folderDoc.data().name;
-                setFolderName(name);
-                setEditName(name);
+                const data = folderDoc.data();
+                setFolderName(data.name);
+                setEditName(data.name);
+                setFolderDescription(data.description || '');
+                setEditDescription(data.description || '');
             } else {
                 navigate('/personal');
             }
@@ -247,6 +254,20 @@ export const PersonalFolderView = () => {
         }
     };
 
+    const handleUpdateFolderDescription = async () => {
+        if (!currentUser || !folderId) return;
+
+        try {
+            await updateDoc(doc(db, 'users', currentUser.uid, 'folders', folderId), {
+                description: editDescription.trim()
+            });
+            setFolderDescription(editDescription.trim());
+            setIsEditingDescription(false);
+        } catch (error) {
+            console.error("Error updating folder description:", error);
+        }
+    };
+
     const handleBatchAdd = async () => {
         if (!batchJson.trim() || !currentUser || !folderId) return;
         setBatchError('');
@@ -332,6 +353,73 @@ export const PersonalFolderView = () => {
                                 </button>
                             </div>
                         )}
+
+                        {/* Description Section */}
+                        <div className="mt-4 mb-6">
+                            {isEditingDescription ? (
+                                <div className="space-y-2">
+                                    <textarea
+                                        value={editDescription}
+                                        onChange={(e) => setEditDescription(e.target.value)}
+                                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-base text-gray-700 border px-3 py-2 min-h-[100px]"
+                                        placeholder="新增資料夾說明..."
+                                        autoFocus
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingDescription(false);
+                                                setEditDescription(folderDescription);
+                                            }}
+                                            className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+                                        >
+                                            取消
+                                        </button>
+                                        <button
+                                            onClick={handleUpdateFolderDescription}
+                                            className="px-3 py-1 text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm"
+                                        >
+                                            儲存
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="group relative">
+                                    <div className={`prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap ${!folderDescription && 'italic text-gray-400'}`}>
+                                        {folderDescription ? (
+                                            folderDescription.split(/(https?:\/\/[^\s]+)/g).map((part, index) => {
+                                                if (part.match(/https?:\/\/[^\s]+/)) {
+                                                    return (
+                                                        <a
+                                                            key={index}
+                                                            href={part}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-indigo-600 hover:text-indigo-800 underline break-all"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            {part}
+                                                        </a>
+                                                    );
+                                                }
+                                                return part;
+                                            })
+                                        ) : "暫無說明"}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setIsEditingDescription(true);
+                                            }}
+                                            className="absolute -right-8 top-0 p-1 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                                            title="編輯說明"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <p className="mt-1 text-sm text-gray-500">共 {cards.length} 張字卡</p>
                     </div>
 
@@ -373,18 +461,18 @@ export const PersonalFolderView = () => {
                             <span className="text-xs font-medium text-gray-500">出題順序</span>
                             <div className="flex rounded-lg bg-gray-100 p-1">
                                 <button
-                                    onClick={() => setMode('random')}
-                                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${mode === 'random' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    <Shuffle className="h-4 w-4" />
-                                    隨機
-                                </button>
-                                <button
                                     onClick={() => setMode('sequential')}
                                     className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${mode === 'sequential' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
                                     <ListOrdered className="h-4 w-4" />
                                     順序
+                                </button>
+                                <button
+                                    onClick={() => setMode('random')}
+                                    className={`flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${mode === 'random' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    <Shuffle className="h-4 w-4" />
+                                    隨機
                                 </button>
                             </div>
                         </div>
@@ -394,16 +482,16 @@ export const PersonalFolderView = () => {
                             <span className="text-xs font-medium text-gray-500">優先顯示 (單字卡)</span>
                             <div className="flex rounded-lg bg-gray-100 p-1">
                                 <button
-                                    onClick={() => setFrontSide('question')}
-                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${frontSide === 'question' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
-                                >
-                                    韓文
-                                </button>
-                                <button
                                     onClick={() => setFrontSide('answer')}
                                     className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${frontSide === 'answer' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
                                     中文
+                                </button>
+                                <button
+                                    onClick={() => setFrontSide('question')}
+                                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-all ${frontSide === 'question' ? 'bg-white text-indigo-600 shadow' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    韓文
                                 </button>
                             </div>
                         </div>
