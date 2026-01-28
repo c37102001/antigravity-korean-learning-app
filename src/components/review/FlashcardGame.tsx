@@ -8,6 +8,7 @@ interface FlashcardGameProps {
     mode?: 'sequential' | 'random';
     title?: string;
     autoAudio?: boolean;
+    flipDelay?: number;
     onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
@@ -16,6 +17,7 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     mode = 'random',
     title = '單字卡',
     autoAudio = true,
+    flipDelay = 0,
     onToggleStar
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -85,7 +87,10 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
         }
 
         const currentCard = shuffledItems[currentIndex];
-        const delayBeforeAction = 1000; // Time to wait after audio finishes or if no audio
+        // Standard delay for Back -> Next transition
+        const defaultDelay = 1000;
+        // Apply extra delay only for Front -> Back transition
+        const currentDelay = isFlipped ? defaultDelay : (defaultDelay + (flipDelay * 1000));
 
         const proceed = () => {
             autoPlayTimerRef.current = setTimeout(() => {
@@ -95,7 +100,7 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
                     setIsFlipped(false);
                     setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
                 }
-            }, delayBeforeAction);
+            }, currentDelay);
         };
 
         if (autoAudio) {
@@ -108,14 +113,14 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
             }, 500);
         } else {
             // If no audio, just wait a fixed time then proceed
-            autoPlayTimerRef.current = setTimeout(proceed, 2000);
+            autoPlayTimerRef.current = setTimeout(proceed, 2000 + (isFlipped ? 0 : flipDelay * 1000));
         }
 
         return () => {
             if (autoPlayTimerRef.current) clearTimeout(autoPlayTimerRef.current);
             window.speechSynthesis.cancel();
         };
-    }, [isAutoPlaying, currentIndex, isFlipped, shuffledItems, autoAudio, playAudio]);
+    }, [isAutoPlaying, currentIndex, isFlipped, shuffledItems, autoAudio, playAudio, flipDelay]);
 
 
     if (shuffledItems.length === 0) {

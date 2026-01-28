@@ -53,6 +53,7 @@ export const PersonalFolderView = () => {
     const [frontSide, setFrontSide] = useState<'question' | 'answer'>('answer');
     const [autoAudio, setAutoAudio] = useState(true);
     const [onlyStarred, setOnlyStarred] = useState(false);
+    const [flipDelay, setFlipDelay] = useState(0);
 
     const navigate = useNavigate();
 
@@ -518,7 +519,7 @@ export const PersonalFolderView = () => {
                     {cards.length > 0 && (
                         <div className="flex flex-wrap gap-3">
                             <Link
-                                to={`/personal/folder/${folderId}/review/flashcards?mode=${mode}&front=${frontSide}&audio=${autoAudio}&starred=${onlyStarred}`}
+                                to={`/personal/folder/${folderId}/review/flashcards?mode=${mode}&front=${frontSide}&audio=${autoAudio}&starred=${onlyStarred}&flipDelay=${flipDelay}`}
                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
                             >
                                 <BookOpen className="h-4 w-4 mr-2" />
@@ -543,7 +544,6 @@ export const PersonalFolderView = () => {
                 </div>
             </div>
 
-            {/* Review Settings Panel */}
             {cards.length > 0 && (
                 <div className="mb-8 bg-white rounded-lg shadow p-6 border border-gray-200">
                     <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">複習設定</h3>
@@ -605,6 +605,24 @@ export const PersonalFolderView = () => {
                                 >
                                     手動播放
                                 </button>
+                            </div>
+                        </div>
+
+                        {/* Flip Delay Setting */}
+                        <div className="flex flex-col gap-2">
+                            <span className="text-xs font-medium text-gray-500">翻面額外等待 (秒)</span>
+                            <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-lg">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="5"
+                                    value={flipDelay}
+                                    onChange={(e) => setFlipDelay(parseInt(e.target.value))}
+                                    className="w-32 accent-indigo-600"
+                                />
+                                <span className="text-sm font-medium text-indigo-600 min-w-[2rem] text-center">
+                                    {flipDelay}s
+                                </span>
                             </div>
                         </div>
 
