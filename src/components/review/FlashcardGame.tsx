@@ -25,6 +25,7 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     const [shuffledItems, setShuffledItems] = useState<ReviewItem[]>([]);
     const [isAutoPlaying, setIsAutoPlaying] = useState(false);
     const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [noFlipMode, setNoFlipMode] = useState(false);
 
     useEffect(() => {
         if (mode === 'random') {
@@ -94,11 +95,25 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
 
         const proceed = () => {
             autoPlayTimerRef.current = setTimeout(() => {
-                if (!isFlipped) {
-                    setIsFlipped(true);
+                if (noFlipMode) {
+                    // In No Flip Mode: Front -> Next Card (Skip Back)
+                    // Since we are currently at Front (isFlipped should be false primarily, but guard it)
+                    if (!isFlipped) {
+                        // We are at Front, so move to next card directly
+                        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
+                    } else {
+                        // Should not happen ideally if we started correctly, but if we were flipped:
+                        setIsFlipped(false);
+                        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
+                    }
                 } else {
-                    setIsFlipped(false);
-                    setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
+                    // Standard Mode
+                    if (!isFlipped) {
+                        setIsFlipped(true);
+                    } else {
+                        setIsFlipped(false);
+                        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
+                    }
                 }
             }, currentDelay);
         };
@@ -120,7 +135,7 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
             if (autoPlayTimerRef.current) clearTimeout(autoPlayTimerRef.current);
             window.speechSynthesis.cancel();
         };
-    }, [isAutoPlaying, currentIndex, isFlipped, shuffledItems, autoAudio, playAudio, flipDelay]);
+    }, [isAutoPlaying, currentIndex, isFlipped, shuffledItems, autoAudio, playAudio, flipDelay, noFlipMode]);
 
 
     if (shuffledItems.length === 0) {
@@ -130,11 +145,6 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     const currentCard = shuffledItems[currentIndex];
 
     const handleFlip = () => {
-        if (isAutoPlaying) return; // Disable manual flip during auto-play? Or maybe pause it? Let's just allow it but it might conflict. Better to pause or ignore. 
-        // For better UX, let's pause auto-play if user interacts, or just let it be. 
-        // The user requirement didn't specify, but usually manual interaction should pause auto-play or just coexist. 
-        // Given the complexity, let's just allow it but know it might jump. 
-        // Actually, let's pause auto-play if user manually interacts to avoid chaos.
         if (isAutoPlaying) setIsAutoPlaying(false);
 
         const newFlippedState = !isFlipped;
@@ -171,13 +181,28 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
         setIsAutoPlaying(!isAutoPlaying);
     };
 
+    const toggleNoFlipMode = () => {
+        setNoFlipMode(!noFlipMode);
+    };
+
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="mb-8 text-center">
+            <div className="mb-8 text-center bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-white/20 shadow-sm">
                 <h2 className="text-2xl font-bold text-slate-900">{title} ({currentIndex + 1}/{shuffledItems.length})</h2>
-                <p className="text-slate-500">
+                <p className="text-slate-500 mb-2">
                     {isAutoPlaying ? '自動播放中...' : `點擊卡片翻面${autoAudio ? '，會自動發音' : ''}`}
                 </p>
+                <button
+                    onClick={toggleNoFlipMode}
+                    disabled={isAutoPlaying}
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors ${noFlipMode
+                        ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                        : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+                        } ${isAutoPlaying ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                    <span className={`w-2 h-2 rounded-full mr-1.5 ${noFlipMode ? 'bg-indigo-500' : 'bg-gray-400'}`}></span>
+                    播放時不翻面
+                </button>
             </div>
 
             <div className="relative h-80 w-64 perspective-1000 cursor-pointer" onClick={handleFlip}>
