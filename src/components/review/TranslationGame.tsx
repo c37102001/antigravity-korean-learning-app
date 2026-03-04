@@ -7,10 +7,11 @@ interface TranslationGameProps {
     items: ReviewItem[];
     mode?: 'sequential' | 'random';
     title?: string;
+    autoAudio?: boolean;
     onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 'random', title = '翻譯練習', onToggleStar }) => {
+export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 'random', title = '翻譯練習', autoAudio = true, onToggleStar }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [input, setInput] = useState('');
     const [showResult, setShowResult] = useState(false);
@@ -66,6 +67,16 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
         window.speechSynthesis.speak(utterance);
     };
 
+    useEffect(() => {
+        if (!autoAudio || showResult || currentItem.front !== currentItem.audio) return;
+
+        const timer = setTimeout(() => {
+            playAudio(currentItem.audio);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [autoAudio, currentItem, showResult]);
+
     const checkAnswer = (answer: string) => {
         const correct = answer.trim().toLowerCase() === currentItem.back.toLowerCase();
         setIsCorrect(correct);
@@ -81,6 +92,9 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
         setIsCorrect(false);
         setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
     };
+
+    const translateTargetLabel = currentItem.back === currentItem.audio ? '韓文' : '中文';
+    const typingPlaceholder = translateTargetLabel === '韓文' ? '輸入韓文...' : '輸入中文...';
 
     return (
         <div className="mx-auto max-w-2xl">
@@ -120,7 +134,7 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
                             <Star className={`h-6 w-6 ${currentItem.isStarred ? 'fill-current' : ''}`} />
                         </button>
                     )}
-                    <p className="mb-2 text-sm text-slate-500">請翻譯成韓文</p>
+                    <p className="mb-2 text-sm text-slate-500">請翻譯成{translateTargetLabel}</p>
                     <h3 className="text-3xl font-bold text-slate-900">{currentItem.front}</h3>
                 </div>
 
@@ -178,7 +192,7 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({ items, mode = 
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && checkAnswer(input)}
-                                        placeholder="輸入韓文..."
+                                        placeholder={typingPlaceholder}
                                         className="flex-1 rounded-xl border-2 border-slate-200 px-4 py-3 text-lg outline-none focus:border-indigo-500"
                                         autoFocus
                                     />

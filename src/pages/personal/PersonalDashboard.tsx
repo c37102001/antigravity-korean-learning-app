@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp, orderBy, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -69,6 +69,21 @@ export const PersonalDashboard = () => {
         if (!currentUser || !window.confirm('確定要刪除這個資料夾嗎？裡面的所有字卡也會被刪除。')) return;
 
         try {
+            const cardsRef = collection(db, 'users', currentUser.uid, 'folders', folderId, 'cards');
+            const cardsSnapshot = await getDocs(cardsRef);
+
+            if (!cardsSnapshot.empty) {
+                const cardDocs = cardsSnapshot.docs;
+                const chunkSize = 500;
+
+                for (let i = 0; i < cardDocs.length; i += chunkSize) {
+                    const batch = writeBatch(db);
+                    const chunk = cardDocs.slice(i, i + chunkSize);
+                    chunk.forEach(cardDoc => batch.delete(cardDoc.ref));
+                    await batch.commit();
+                }
+            }
+
             await deleteDoc(doc(db, 'users', currentUser.uid, 'folders', folderId));
         } catch (error) {
             console.error("Error deleting folder:", error);

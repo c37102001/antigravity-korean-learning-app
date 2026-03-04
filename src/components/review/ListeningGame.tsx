@@ -7,10 +7,11 @@ interface ListeningGameProps {
     items: ReviewItem[];
     mode?: 'sequential' | 'random';
     title?: string;
+    autoAudio?: boolean;
     onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
-export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'random', title = '聽力練習', onToggleStar }) => {
+export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'random', title = '聽力練習', autoAudio = true, onToggleStar }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showResult, setShowResult] = useState(false);
     const [isCorrect, setIsCorrect] = useState(false);
@@ -38,10 +39,12 @@ export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'ran
 
             setOptions([...others, currentItem].sort(() => Math.random() - 0.5));
 
-            // Auto play audio when new question appears
-            setTimeout(() => playAudio(currentItem.audio), 500);
+            if (autoAudio) {
+                const timer = setTimeout(() => playAudio(currentItem.audio), 500);
+                return () => clearTimeout(timer);
+            }
         }
-    }, [currentItem, items]);
+    }, [currentItem, items, autoAudio]);
 
     if (!currentItem) return <div>載入中...</div>;
 
@@ -76,6 +79,8 @@ export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'ran
         setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
     };
 
+    const promptLabel = currentItem.front === currentItem.audio ? '請聽韓文，選出正確的韓文內容' : '請聽韓文，選出正確的意思';
+
     return (
         <div className="mx-auto max-w-2xl">
             <div className="mb-8 text-center relative">
@@ -88,7 +93,7 @@ export const ListeningGame: React.FC<ListeningGameProps> = ({ items, mode = 'ran
                     </button>
                 )}
                 <h2 className="text-2xl font-bold text-slate-900">{title} ({currentIndex + 1}/{shuffledItems.length})</h2>
-                <p className="text-slate-500">請聽韓文，選出正確的意思</p>
+                <p className="text-slate-500">{promptLabel}</p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">

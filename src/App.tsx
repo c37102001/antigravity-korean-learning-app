@@ -50,7 +50,7 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { PersonalDashboard } from './pages/personal/PersonalDashboard';
 import { PersonalFolderView } from './pages/personal/PersonalFolderView';
-import { PersonalFlashcards, PersonalTranslation, PersonalListening } from './pages/personal/PersonalReviewWrappers';
+import { PersonalFlashcards, PersonalTranslation, PersonalListening, PersonalConversation } from './pages/personal/PersonalReviewWrappers';
 
 function App() {
   return (
@@ -69,6 +69,7 @@ function App() {
             <Route path="personal/folder/:folderId/review/flashcards" element={<PersonalFlashcards />} />
             <Route path="personal/folder/:folderId/review/translation" element={<PersonalTranslation />} />
             <Route path="personal/folder/:folderId/review/listening" element={<PersonalListening />} />
+            <Route path="personal/folder/:folderId/review/conversation" element={<PersonalConversation />} />
             <Route path="folder/:folderId" element={<FolderView />} />
             <Route path="folder/:folderId/lesson/:lessonId" element={<DayView />} />
 
