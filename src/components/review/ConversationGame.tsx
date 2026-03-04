@@ -90,12 +90,19 @@ export const ConversationGame: React.FC<ConversationGameProps> = ({
     };
 
     const moveNext = () => {
+        window.speechSynthesis.cancel();
         if (currentIndex >= items.length - 1) {
             setIsComplete(true);
-            window.speechSynthesis.cancel();
             return;
         }
         setCurrentIndex(prev => prev + 1);
+        resetTurnState();
+    };
+
+    const movePrev = () => {
+        if (currentIndex === 0) return;
+        window.speechSynthesis.cancel();
+        setCurrentIndex(prev => prev - 1);
         resetTurnState();
     };
 
@@ -241,16 +248,35 @@ export const ConversationGame: React.FC<ConversationGameProps> = ({
                             <Volume2 className="h-5 w-5 mr-2" />
                             播放 / 重播對方句子
                         </button>
-                        <button
-                            onClick={moveNext}
-                            className="w-full inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 font-bold text-white hover:bg-indigo-700"
-                        >
-                            我聽完了，下一步
-                            <ArrowRight className="h-5 w-5 ml-2" />
-                        </button>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button
+                                onClick={movePrev}
+                                disabled={currentIndex === 0}
+                                className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-3 font-bold text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                上一句
+                            </button>
+                            <button
+                                onClick={moveNext}
+                                className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-3 font-bold text-white hover:bg-indigo-700"
+                            >
+                                我聽完了，下一步
+                                <ArrowRight className="h-5 w-5 ml-2" />
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     <div>
+                        <div className="flex gap-2 mb-3">
+                            <button
+                                onClick={() => playAudio(currentItem.audio)}
+                                className="inline-flex items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 font-medium text-indigo-700 hover:bg-indigo-100"
+                            >
+                                <Volume2 className="h-5 w-5 mr-2" />
+                                播放語音
+                            </button>
+                        </div>
+
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -284,11 +310,39 @@ export const ConversationGame: React.FC<ConversationGameProps> = ({
                         {result === 'correct' && (
                             <div className="mt-4 rounded-lg bg-emerald-50 p-4">
                                 <p className="font-bold text-emerald-800">答對了，可以進到下一句。</p>
+                                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <button
+                                        onClick={movePrev}
+                                        disabled={currentIndex === 0}
+                                        className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 font-bold text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        上一句
+                                    </button>
+                                    <button
+                                        onClick={moveNext}
+                                        className="inline-flex items-center justify-center rounded-lg bg-emerald-600 px-5 py-2.5 font-bold text-white hover:bg-emerald-700"
+                                    >
+                                        下一句
+                                        <ArrowRight className="h-5 w-5 ml-2" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {result !== 'correct' && (
+                            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <button
+                                    onClick={movePrev}
+                                    disabled={currentIndex === 0}
+                                    className="inline-flex items-center justify-center rounded-lg bg-white px-5 py-2.5 font-bold text-slate-700 border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    上一句
+                                </button>
                                 <button
                                     onClick={moveNext}
-                                    className="mt-3 inline-flex items-center rounded-lg bg-emerald-600 px-5 py-2.5 font-bold text-white hover:bg-emerald-700"
+                                    className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 font-bold text-white hover:bg-indigo-700"
                                 >
-                                    下一句
+                                    直接下一句
                                     <ArrowRight className="h-5 w-5 ml-2" />
                                 </button>
                             </div>

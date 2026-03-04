@@ -26,16 +26,48 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     const [isAutoPlaying, setIsAutoPlaying] = useState(false);
     const autoPlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [noFlipMode, setNoFlipMode] = useState(false);
+    const prevModeRef = useRef<'sequential' | 'random'>(mode);
 
     useEffect(() => {
+        const modeChanged = prevModeRef.current !== mode;
+        const previousItems = shuffledItems;
+        const previousCurrentId = previousItems[currentIndex]?.id;
+
+        let nextItems: ReviewItem[];
+
         if (mode === 'random') {
-            setShuffledItems([...items].sort(() => Math.random() - 0.5));
+            if (modeChanged || previousItems.length === 0) {
+                nextItems = [...items].sort(() => Math.random() - 0.5);
+            } else {
+                const incomingById = new Map(items.map(item => [item.id, item]));
+                const preservedItems = previousItems
+                    .filter(item => incomingById.has(item.id))
+                    .map(item => incomingById.get(item.id)!);
+                const preservedIds = new Set(preservedItems.map(item => item.id));
+                const newItems = items
+                    .filter(item => !preservedIds.has(item.id))
+                    .sort(() => Math.random() - 0.5);
+                nextItems = [...preservedItems, ...newItems];
+            }
         } else {
-            setShuffledItems(items);
+            nextItems = items;
         }
-        setCurrentIndex(0);
+
+        let nextIndex = 0;
+        if (!modeChanged && nextItems.length > 0) {
+            if (previousCurrentId) {
+                const existingIndex = nextItems.findIndex(item => item.id === previousCurrentId);
+                nextIndex = existingIndex !== -1 ? existingIndex : Math.min(currentIndex, nextItems.length - 1);
+            } else {
+                nextIndex = Math.min(currentIndex, nextItems.length - 1);
+            }
+        }
+
+        setShuffledItems(nextItems);
+        setCurrentIndex(nextItems.length > 0 ? nextIndex : 0);
         setIsFlipped(false);
         setIsAutoPlaying(false);
+        prevModeRef.current = mode;
     }, [items, mode]);
 
     const playAudio = useCallback((text: string, lang: 'ko-KR' | 'zh-TW', onEnd?: () => void) => {
