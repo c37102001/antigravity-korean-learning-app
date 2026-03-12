@@ -11,11 +11,42 @@ interface TranslationGameProps {
     onToggleStar?: (id: string, isStarred: boolean) => void;
 }
 
+interface ShortcutActionButtonProps {
+    shortcut: string;
+    label: string;
+    onClick: () => void;
+    variant?: 'soft' | 'outline';
+}
+
 interface PartialCheckResult {
     allCorrectPrefix: boolean;
     wrongRawIndices: Set<number>;
     missingSpaceBeforeRawIndices: Set<number>;
 }
+
+const ShortcutActionButton: React.FC<ShortcutActionButtonProps> = ({
+    shortcut,
+    label,
+    onClick,
+    variant = 'outline'
+}) => {
+    const baseClassName = variant === 'soft'
+        ? 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50';
+
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${baseClassName}`}
+        >
+            <span className="inline-flex min-w-6 items-center justify-center rounded-md bg-slate-900 px-1.5 py-0.5 text-xs font-bold text-white">
+                {shortcut}
+            </span>
+            <span>{label}</span>
+        </button>
+    );
+};
 
 const isPunctuation = (char: string) => /\p{P}/u.test(char);
 
@@ -508,8 +539,33 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
-                                        快捷鍵：`1` 上一題、`3` 下一題、`2` 檢查目前輸入、`0` 顯示/隱藏答案
+                                    <div className="rounded-lg bg-slate-50 p-3">
+                                        <div className="flex flex-wrap gap-2">
+                                            <ShortcutActionButton
+                                                shortcut="1"
+                                                label="上一題"
+                                                onClick={() => moveToPrevQuestion('已移動到上一題。')}
+                                                variant="soft"
+                                            />
+                                            <ShortcutActionButton
+                                                shortcut="2"
+                                                label="檢查目前輸入"
+                                                onClick={checkTypingPrefix}
+                                                variant="soft"
+                                            />
+                                            <ShortcutActionButton
+                                                shortcut="3"
+                                                label="下一題"
+                                                onClick={() => moveToNextQuestion('已移動到下一題。')}
+                                                variant="soft"
+                                            />
+                                            <ShortcutActionButton
+                                                shortcut="0"
+                                                label="顯示/隱藏答案"
+                                                onClick={toggleTypingHint}
+                                                variant="soft"
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className="flex gap-2">
@@ -532,9 +588,16 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({
                                     </div>
 
                                     <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm">
-                                        <p className="font-medium text-slate-700">
-                                            提示：{showHint ? currentItem.back : 'hidden (按 0)'}
-                                        </p>
+                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                            <p className="font-medium text-slate-700">
+                                                提示：{showHint ? currentItem.back : 'hidden'}
+                                            </p>
+                                            <ShortcutActionButton
+                                                shortcut="0"
+                                                label={showHint ? '隱藏答案' : '顯示答案'}
+                                                onClick={toggleTypingHint}
+                                            />
+                                        </div>
                                     </div>
 
                                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -551,30 +614,26 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({
                                     )}
 
                                     <div className="flex flex-wrap gap-2">
-                                        <button
+                                        <ShortcutActionButton
+                                            shortcut="1"
+                                            label="上一題"
                                             onClick={() => moveToPrevQuestion('已移動到上一題。')}
-                                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                        >
-                                            1 上一題
-                                        </button>
-                                        <button
+                                        />
+                                        <ShortcutActionButton
+                                            shortcut="2"
+                                            label="檢查目前輸入"
                                             onClick={checkTypingPrefix}
-                                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                        >
-                                            2 檢查目前輸入
-                                        </button>
-                                        <button
+                                        />
+                                        <ShortcutActionButton
+                                            shortcut="3"
+                                            label="下一題"
                                             onClick={() => moveToNextQuestion('已移動到下一題。')}
-                                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                        >
-                                            3 下一題
-                                        </button>
-                                        <button
+                                        />
+                                        <ShortcutActionButton
+                                            shortcut="0"
+                                            label="顯示/隱藏答案"
                                             onClick={toggleTypingHint}
-                                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                        >
-                                            0 顯示/隱藏答案
-                                        </button>
+                                        />
                                     </div>
                                 </div>
                             )}
