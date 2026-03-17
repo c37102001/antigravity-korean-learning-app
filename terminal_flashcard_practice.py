@@ -428,15 +428,70 @@ def clear_plain_screen() -> None:
     print("\033[2J\033[H", end="")
 
 
+def prompt_search_query(stdscr: curses.window, initial_query: str = "") -> Optional[str]:
+    query = initial_query
+    stdscr.keypad(True)
+    curses.curs_set(1)
+
+    while True:
+        stdscr.clear()
+        draw_line(stdscr, 1, 2, "Folder Search", curses.A_BOLD)
+        draw_line(stdscr, 2, 2, "Type keyword, Enter=apply, Esc=cancel", curses.A_DIM)
+        draw_line(stdscr, 3, 2, f"Query: {query}")
+        stdscr.move(3, min(stdscr.getmaxyx()[1] - 1, 9 + len(query)))
+        stdscr.refresh()
+
+        key = stdscr.get_wch()
+        if key == curses.KEY_RESIZE:
+            continue
+        if key == "\x1b":
+            curses.curs_set(0)
+            return None
+        if key in ("\n", "\r") or key in (curses.KEY_ENTER, 10, 13):
+            curses.curs_set(0)
+            return query.strip()
+        if key in (curses.KEY_BACKSPACE, "\b", "\x7f"):
+            query = query[:-1]
+            continue
+        if isinstance(key, str) and key.isprintable():
+            query += key
+
+
 def folder_menu(stdscr: curses.window, email: str, folders: List[Folder]) -> Tuple[str, int]:
     selected = 0
+    search_query = ""
     stdscr.keypad(True)
     curses.curs_set(0)
 
     while True:
+        filtered_pairs = [
+            (idx, folder)
+            for idx, folder in enumerate(folders)
+            if not search_query or search_query.lower() in folder.name.lower()
+        ]
+        filtered_folders = [folder for _, folder in filtered_pairs]
+        if filtered_folders:
+            selected %= len(filtered_folders)
+        else:
+            selected = 0
+
         stdscr.clear()
-        draw_line(stdscr, 1, 2, f"Folders ({len(folders)}) | {email}", curses.A_BOLD)
-        draw_line(stdscr, 2, 2, "Arrows=move Enter=open Shift+R=refresh Shift+Q/Esc=quit", curses.A_DIM)
+        draw_line(
+            stdscr,
+            1,
+            2,
+            f"Folders ({len(filtered_folders)}/{len(folders)}) | {email}",
+            curses.A_BOLD,
+        )
+        draw_line(
+            stdscr,
+            2,
+            2,
+            "Arrows=move Enter=open F=search Shift+R=refresh Shift+Q/Esc=quit",
+            curses.A_DIM,
+        )
+        if search_query:
+            draw_line(stdscr, 3, 2, f"Search: {search_query}", curses.A_BOLD)
 
         if not folders:
             draw_line(stdscr, 3, 2, "No folders found.", curses.A_BOLD)
@@ -447,20 +502,42 @@ def folder_menu(stdscr: curses.window, email: str, folders: List[Folder]) -> Tup
                 return ("quit", -1)
             if key == ord("R"):
                 return ("refresh", -1)
+            if key in (ord("f"), ord("F")):
+                next_query = prompt_search_query(stdscr, search_query)
+                if next_query is not None:
+                    search_query = next_query
+                continue
+            continue
+
+        if not filtered_folders:
+            draw_line(stdscr, 4, 2, "No matching folders.", curses.A_BOLD)
+            draw_line(stdscr, 5, 2, "Press F to search again or clear query.", curses.A_DIM)
+            stdscr.refresh()
+            key = stdscr.getch()
+            if key in (ord("Q"), 27):
+                return ("quit", -1)
+            if key == ord("R"):
+                return ("refresh", -1)
+            if key in (ord("f"), ord("F")):
+                next_query = prompt_search_query(stdscr, search_query)
+                if next_query is not None:
+                    search_query = next_query
+                continue
             continue
 
         visible_rows = 3
         start = max(0, selected - 1)
-        if start + visible_rows > len(folders):
-            start = max(0, len(folders) - visible_rows)
-        end = min(len(folders), start + visible_rows)
+        if start + visible_rows > len(filtered_folders):
+            start = max(0, len(filtered_folders) - visible_rows)
+        end = min(len(filtered_folders), start + visible_rows)
 
         for idx in range(start, end):
-            folder = folders[idx]
+            folder = filtered_folders[idx]
             prefix = ">> " if idx == selected else "   "
             tags = f" [{', '.join(folder.tags)}]" if folder.tags else ""
             attr = curses.A_REVERSE if idx == selected else curses.A_NORMAL
-            draw_line(stdscr, 3 + (idx - start), 2, f"{prefix}{folder.name}{tags}", attr)
+            row_y = 4 if search_query else 3
+            draw_line(stdscr, row_y + (idx - start), 2, f"{prefix}{folder.name}{tags}", attr)
 
         stdscr.refresh()
         key = stdscr.getch()
@@ -468,14 +545,19 @@ def folder_menu(stdscr: curses.window, email: str, folders: List[Folder]) -> Tup
             return ("quit", -1)
         if key == ord("R"):
             return ("refresh", -1)
+        if key in (ord("f"), ord("F")):
+            next_query = prompt_search_query(stdscr, search_query)
+            if next_query is not None:
+                search_query = next_query
+            continue
         if key in (curses.KEY_UP, curses.KEY_LEFT):
-            selected = (selected - 1) % len(folders)
+            selected = (selected - 1) % len(filtered_folders)
             continue
         if key in (curses.KEY_DOWN, curses.KEY_RIGHT):
-            selected = (selected + 1) % len(folders)
+            selected = (selected + 1) % len(filtered_folders)
             continue
         if key in (curses.KEY_ENTER, 10, 13):
-            return ("open", selected)
+            return ("open", filtered_pairs[selected][0])
 
 
 def options_menu(stdscr: curses.window, folder_name: str) -> Optional[Tuple[str, str]]:
