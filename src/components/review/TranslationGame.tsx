@@ -613,28 +613,6 @@ export const TranslationGame: React.FC<TranslationGameProps> = ({
                                         </div>
                                     )}
 
-                                    <div className="flex flex-wrap gap-2">
-                                        <ShortcutActionButton
-                                            shortcut="1"
-                                            label="上一題"
-                                            onClick={() => moveToPrevQuestion('已移動到上一題。')}
-                                        />
-                                        <ShortcutActionButton
-                                            shortcut="2"
-                                            label="檢查目前輸入"
-                                            onClick={checkTypingPrefix}
-                                        />
-                                        <ShortcutActionButton
-                                            shortcut="3"
-                                            label="下一題"
-                                            onClick={() => moveToNextQuestion('已移動到下一題。')}
-                                        />
-                                        <ShortcutActionButton
-                                            shortcut="0"
-                                            label="顯示/隱藏答案"
-                                            onClick={toggleTypingHint}
-                                        />
-                                    </div>
                                 </div>
                             )}
                         </motion.div>
