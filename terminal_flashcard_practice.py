@@ -41,6 +41,7 @@ class Card:
     chinese: str
     order: Optional[int]
     created_at: str
+    is_starred: bool = False
 
 
 @dataclass
@@ -102,6 +103,7 @@ class FirebaseClient:
             order_value = fields.get("order")
             order_num = int(order_value) if isinstance(order_value, int) else None
             created_at = str(fields.get("createdAt", ""))
+            is_starred = bool(fields.get("isStarred", False))
             cards.append(
                 Card(
                     id=_doc_id(doc.get("name", "")),
@@ -109,6 +111,7 @@ class FirebaseClient:
                     chinese=chinese,
                     order=order_num,
                     created_at=created_at,
+                    is_starred=is_starred,
                 )
             )
         cards.sort(
@@ -119,6 +122,19 @@ class FirebaseClient:
             )
         )
         return cards
+
+    def update_card_star(self, uid: str, folder_id: str, card_id: str, id_token: str, is_starred: bool) -> None:
+        url = (
+            f"https://firestore.googleapis.com/v1/projects/{self.project_id}"
+            f"/databases/(default)/documents/users/{uid}/folders/{folder_id}/cards/{card_id}"
+            "?updateMask.fieldPaths=isStarred"
+        )
+        payload = {
+            "fields": {
+                "isStarred": {"booleanValue": is_starred}
+            }
+        }
+        self._request_json("PATCH", url, payload=payload, id_token=id_token)
 
     def _list_documents(self, segments: List[str], id_token: str) -> List[Dict[str, Any]]:
         base_url = (
@@ -635,27 +651,70 @@ def mode_menu(stdscr: curses.window, folder_name: str) -> Optional[str]:
             return options[selected][0]
 
 
-def run_study_mode(stdscr: curses.window, folder_name: str, cards: List[Card]) -> None:
+def only_starred_menu(stdscr: curses.window, folder_name: str) -> Optional[bool]:
+    options = [(False, "全部卡片 (All Cards)"), (True, "只有星星 (Only Starred)")]
+    selected = 0
+    curses.curs_set(0)
+    stdscr.keypad(True)
+
+    while True:
+        stdscr.clear()
+        draw_line(stdscr, 1, 2, f"Filter Select | {folder_name}", curses.A_BOLD)
+        draw_line(stdscr, 2, 2, "Arrows=move Enter=select Esc=back", curses.A_DIM)
+
+        for idx, (val, label) in enumerate(options):
+            attr = curses.A_REVERSE if idx == selected else curses.A_NORMAL
+            prefix = ">> " if idx == selected else "   "
+            draw_line(stdscr, 3 + idx, 2, f"{prefix}{label}", attr)
+
+        stdscr.refresh()
+        key = stdscr.getch()
+        if key == 27:
+            return None
+        if key in (curses.KEY_UP, curses.KEY_LEFT):
+            selected = (selected - 1) % len(options)
+            continue
+        if key in (curses.KEY_DOWN, curses.KEY_RIGHT):
+            selected = (selected + 1) % len(options)
+            continue
+        if key in (curses.KEY_ENTER, 10, 13):
+            return options[selected][0]
+
+
+def run_study_mode(
+    stdscr: curses.window,
+    folder_name: str,
+    folder_id: str,
+    cards: List[Card],
+    only_starred_mode: bool,
+    client: FirebaseClient,
+    session: AuthSession,
+) -> None:
     idx = 0
     message = ""
     curses.curs_set(0)
     stdscr.keypad(True)
 
     while True:
+        if not cards:
+            wait_message(stdscr, "Study Complete", "No more cards available.")
+            return
+
         card = cards[idx]
         stdscr.clear()
+        star_indicator = "[★] " if card.is_starred else "[ ] "
         draw_line(
             stdscr,
             1,
             2,
             (
                 f"Study | Card {idx + 1}/{len(cards)}, "
-                "Esc=back  4=prev  6=next"
+                "Esc=back  4=prev  6=next  0=star"
             ),
             curses.A_BOLD,
         )
-        draw_line(stdscr, 2, 2, f"KO:{card.korean}")
-        draw_line(stdscr, 3, 2, f"ZH:{card.chinese}")
+        draw_line(stdscr, 2, 2, f"{star_indicator}KO:{card.korean}")
+        draw_line(stdscr, 3, 2, f"    ZH:{card.chinese}")
         if message:
             draw_line(stdscr, 4, 2, message, curses.A_BOLD)
         stdscr.refresh()
@@ -664,6 +723,21 @@ def run_study_mode(stdscr: curses.window, folder_name: str, cards: List[Card]) -
         if key == "\x1b":
             return
         if isinstance(key, str):
+            if key == "0":
+                card.is_starred = not card.is_starred
+                try:
+                    client.update_card_star(session.uid, folder_id, card.id, session.id_token, card.is_starred)
+                    if only_starred_mode and not card.is_starred:
+                        del cards[idx]
+                        if idx >= len(cards):
+                            idx = max(0, len(cards) - 1)
+                        message = "Card unstarred and removed from session."
+                    else:
+                        message = "Card starred." if card.is_starred else "Card unstarred."
+                except RuntimeError as exc:
+                    card.is_starred = not card.is_starred # rollback
+                    message = f"Failed to update star: {exc}"
+                continue
             if key == "4":
                 if idx > 0:
                     idx -= 1
@@ -683,9 +757,13 @@ def run_study_mode(stdscr: curses.window, folder_name: str, cards: List[Card]) -
 def run_practice(
     stdscr: curses.window,
     folder_name: str,
+    folder_id: str,
     cards: List[Card],
     order_mode: str,
     front_mode: str,
+    only_starred_mode: bool,
+    client: FirebaseClient,
+    session: AuthSession,
 ) -> None:
     if order_mode == "random":
         random.shuffle(cards)
@@ -717,7 +795,12 @@ def run_practice(
             wrong_attr = curses.A_REVERSE
 
     while True:
+        if not cards:
+            wait_message(stdscr, "Practice Complete", "No more cards available.")
+            return
+
         card = cards[idx]
+        star_indicator = "[★] " if card.is_starred else "[ ] "
         prompt = card.chinese if front_mode == "zh" else card.korean
         answer = card.korean if front_mode == "zh" else card.chinese
         answer_prefix = "Answer:"
@@ -730,11 +813,11 @@ def run_practice(
             2,
             (
                 f"Mode: {order_mode} | Card {idx + 1}/{len(cards)},   "
-                "Esc=back  8=hint  4=prev  +=check  6=next  <-/->=move"
+                "Esc=back  8=hint  4=prev  +=check  6=next  <-/->=move  0=star"
             ),
             curses.A_BOLD,
         )
-        draw_line(stdscr, 2, 2, f"Prompt:{prompt}")
+        draw_line(stdscr, 2, 2, f"{star_indicator}Prompt:{prompt}")
         hint_text = f"Hint  : {answer}" if show_hint else "Hint  : hidden (press 8)"
         draw_line(stdscr, 3, 2, hint_text)
         cursor_x = draw_answer_with_feedback(
@@ -821,6 +904,25 @@ def run_practice(
             continue
 
         if isinstance(key, str):
+            if key == "0":
+                card.is_starred = not card.is_starred
+                try:
+                    client.update_card_star(session.uid, folder_id, card.id, session.id_token, card.is_starred)
+                    if only_starred_mode and not card.is_starred:
+                        del cards[idx]
+                        if idx >= len(cards):
+                            idx = max(0, len(cards) - 1)
+                        user_input = ""
+                        input_cursor = 0
+                        show_hint = False
+                        partial_check = None
+                        message = "Card unstarred and removed from session."
+                    else:
+                        message = "Card starred." if card.is_starred else "Card unstarred."
+                except RuntimeError as exc:
+                    card.is_starred = not card.is_starred # rollback
+                    message = f"Failed to update star: {exc}"
+                continue
             if key == "8":
                 show_hint = not show_hint
                 message = "Hint shown." if show_hint else "Hint hidden."
@@ -896,8 +998,20 @@ def run_terminal_ui(stdscr: curses.window, client: FirebaseClient, session: Auth
             if selected_mode is None:
                 break
 
+            only_starred_mode = only_starred_menu(stdscr, folder.name)
+            if only_starred_mode is None:
+                continue
+
+            active_cards = [c for c in cards if c.is_starred] if only_starred_mode else list(cards)
+            if not active_cards:
+                wait_message(stdscr, "No Cards", "No starred cards found in this folder.")
+                continue
+
             if selected_mode == "study":
-                run_study_mode(stdscr, folder.name, cards)
+                run_study_mode(
+                    stdscr, folder.name, folder.id, active_cards,
+                    only_starred_mode, client, session
+                )
                 continue
 
             if selected_mode == "practice":
@@ -908,9 +1022,13 @@ def run_terminal_ui(stdscr: curses.window, client: FirebaseClient, session: Auth
                 run_practice(
                     stdscr,
                     folder.name,
-                    list(cards),
+                    folder.id,
+                    active_cards,
                     order_mode=order_mode,
                     front_mode=front_mode,
+                    only_starred_mode=only_starred_mode,
+                    client=client,
+                    session=session,
                 )
 
 
