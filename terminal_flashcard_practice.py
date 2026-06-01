@@ -25,6 +25,7 @@ class AuthSession:
     email: str
     uid: str
     id_token: str
+    refresh_token: str
 
 
 @dataclass
@@ -71,10 +72,11 @@ class FirebaseClient:
             email=data.get("email", email),
             uid=data["localId"],
             id_token=data["idToken"],
+            refresh_token=data["refreshToken"],
         )
 
-    def list_folders(self, uid: str, id_token: str) -> List[Folder]:
-        docs = self._list_documents(["users", uid, "folders"], id_token=id_token)
+    def list_folders(self, session: AuthSession) -> List[Folder]:
+        docs = self._list_documents(["users", session.uid, "folders"], session=session)
         folders: List[Folder] = []
         for doc in docs:
             fields = _parse_firestore_fields(doc.get("fields", {}))
@@ -91,9 +93,9 @@ class FirebaseClient:
         folders.sort(key=lambda f: f.name.lower())
         return folders
 
-    def list_cards(self, uid: str, folder_id: str, id_token: str) -> List[Card]:
+    def list_cards(self, session: AuthSession, folder_id: str) -> List[Card]:
         docs = self._list_documents(
-            ["users", uid, "folders", folder_id, "cards"], id_token=id_token
+            ["users", session.uid, "folders", folder_id, "cards"], session=session
         )
         cards: List[Card] = []
         for doc in docs:
@@ -123,10 +125,10 @@ class FirebaseClient:
         )
         return cards
 
-    def update_card_star(self, uid: str, folder_id: str, card_id: str, id_token: str, is_starred: bool) -> None:
+    def update_card_star(self, session: AuthSession, folder_id: str, card_id: str, is_starred: bool) -> None:
         url = (
             f"https://firestore.googleapis.com/v1/projects/{self.project_id}"
-            f"/databases/(default)/documents/users/{uid}/folders/{folder_id}/cards/{card_id}"
+            f"/databases/(default)/documents/users/{session.uid}/folders/{folder_id}/cards/{card_id}"
             "?updateMask.fieldPaths=isStarred"
         )
         payload = {
@@ -134,9 +136,9 @@ class FirebaseClient:
                 "isStarred": {"booleanValue": is_starred}
             }
         }
-        self._request_json("PATCH", url, payload=payload, id_token=id_token)
+        self._request_json("PATCH", url, payload=payload, session=session)
 
-    def _list_documents(self, segments: List[str], id_token: str) -> List[Dict[str, Any]]:
+    def _list_documents(self, segments: List[str], session: AuthSession) -> List[Dict[str, Any]]:
         base_url = (
             f"https://firestore.googleapis.com/v1/projects/{self.project_id}"
             "/databases/(default)/documents"
@@ -150,23 +152,36 @@ class FirebaseClient:
             if next_page_token:
                 query["pageToken"] = next_page_token
             url = f"{base_url}/{path}?{parse.urlencode(query)}"
-            response = self._request_json("GET", url, id_token=id_token)
+            response = self._request_json("GET", url, session=session)
             docs.extend(response.get("documents", []))
             next_page_token = response.get("nextPageToken")
             if not next_page_token:
                 break
         return docs
 
+    def _refresh_session_token(self, session: AuthSession) -> None:
+        url = f"https://securetoken.googleapis.com/v1/token?key={self.api_key}"
+        payload = {
+            "grant_type": "refresh_token",
+            "refresh_token": session.refresh_token,
+        }
+        data = self._request_json("POST", url, payload=payload, _retry=False)
+        if "id_token" in data:
+            session.id_token = data["id_token"]
+        if "refresh_token" in data:
+            session.refresh_token = data["refresh_token"]
+
     def _request_json(
         self,
         method: str,
         url: str,
         payload: Optional[Dict[str, Any]] = None,
-        id_token: Optional[str] = None,
+        session: Optional[AuthSession] = None,
+        _retry: bool = True,
     ) -> Dict[str, Any]:
         headers = {"Content-Type": "application/json"}
-        if id_token:
-            headers["Authorization"] = f"Bearer {id_token}"
+        if session and session.id_token:
+            headers["Authorization"] = f"Bearer {session.id_token}"
 
         data = None
         if payload is not None:
@@ -178,6 +193,10 @@ class FirebaseClient:
                 body = resp.read().decode("utf-8")
                 return json.loads(body) if body else {}
         except error.HTTPError as exc:
+            if exc.code == 401 and session and session.refresh_token and _retry:
+                self._refresh_session_token(session)
+                return self._request_json(method, url, payload=payload, session=session, _retry=False)
+
             details = exc.read().decode("utf-8", errors="replace")
             message = _extract_http_error_message(details) or details or str(exc)
             raise RuntimeError(f"HTTP {exc.code}: {message}") from exc
@@ -726,7 +745,7 @@ def run_study_mode(
             if key == "0":
                 card.is_starred = not card.is_starred
                 try:
-                    client.update_card_star(session.uid, folder_id, card.id, session.id_token, card.is_starred)
+                    client.update_card_star(session, folder_id, card.id, card.is_starred)
                     if only_starred_mode and not card.is_starred:
                         del cards[idx]
                         if idx >= len(cards):
@@ -907,7 +926,7 @@ def run_practice(
             if key == "0":
                 card.is_starred = not card.is_starred
                 try:
-                    client.update_card_star(session.uid, folder_id, card.id, session.id_token, card.is_starred)
+                    client.update_card_star(session, folder_id, card.id, card.is_starred)
                     if only_starred_mode and not card.is_starred:
                         del cards[idx]
                         if idx >= len(cards):
@@ -968,7 +987,7 @@ def run_practice(
 def run_terminal_ui(stdscr: curses.window, client: FirebaseClient, session: AuthSession) -> None:
     while True:
         try:
-            folders = client.list_folders(session.uid, session.id_token)
+            folders = client.list_folders(session)
         except RuntimeError as exc:
             wait_message(stdscr, "Error", f"Failed to load folders:\n{exc}")
             return
@@ -984,7 +1003,7 @@ def run_terminal_ui(stdscr: curses.window, client: FirebaseClient, session: Auth
         folder = folders[idx]
 
         try:
-            cards = client.list_cards(session.uid, folder.id, session.id_token)
+            cards = client.list_cards(session, folder.id)
         except RuntimeError as exc:
             wait_message(stdscr, "Error", f"Failed to load cards:\n{exc}")
             continue
