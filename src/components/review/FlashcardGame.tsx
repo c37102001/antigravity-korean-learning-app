@@ -128,16 +128,8 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
         const proceed = () => {
             autoPlayTimerRef.current = setTimeout(() => {
                 if (noFlipMode) {
-                    // In No Flip Mode: Front -> Next Card (Skip Back)
-                    // Since we are currently at Front (isFlipped should be false primarily, but guard it)
-                    if (!isFlipped) {
-                        // We are at Front, so move to next card directly
-                        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
-                    } else {
-                        // Should not happen ideally if we started correctly, but if we were flipped:
-                        setIsFlipped(false);
-                        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
-                    }
+                    setIsFlipped(false);
+                    setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
                 } else {
                     // Standard Mode
                     if (!isFlipped) {
@@ -196,17 +188,13 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
     const nextCard = () => {
         if (isAutoPlaying) setIsAutoPlaying(false);
         setIsFlipped(false);
-        setTimeout(() => {
-            setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
-        }, 200);
+        setCurrentIndex((prev) => (prev + 1) % shuffledItems.length);
     };
 
     const prevCard = () => {
         if (isAutoPlaying) setIsAutoPlaying(false);
         setIsFlipped(false);
-        setTimeout(() => {
-            setCurrentIndex((prev) => (prev - 1 + shuffledItems.length) % shuffledItems.length);
-        }, 200);
+        setCurrentIndex((prev) => (prev - 1 + shuffledItems.length) % shuffledItems.length);
     };
 
     const toggleAutoPlay = () => {
@@ -239,6 +227,7 @@ export const FlashcardGame: React.FC<FlashcardGameProps> = ({
 
             <div className="relative h-80 w-64 perspective-1000 cursor-pointer" onClick={handleFlip}>
                 <motion.div
+                    key={currentCard.id}
                     className="relative h-full w-full transition-all duration-500"
                     style={{ transformStyle: 'preserve-3d' }}
                     animate={{ rotateY: isFlipped ? 180 : 0 }}
